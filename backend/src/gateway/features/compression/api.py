@@ -1,37 +1,56 @@
 from __future__ import annotations
 
-from fastapi import APIRouter
-from pydantic import BaseModel, Field
+from typing import Literal
 
-from gateway.tokenizer import TokenCounter
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field, field_validator
+
+from .evidence import get_evidence
+from .service import SAMPLES, get_service, source_url
 
 router = APIRouter(prefix="/api/v1/compression", tags=["compression"])
-counter = TokenCounter()
 
 
 class CompressionRequest(BaseModel):
-    text: str = Field(min_length=1)
-    method: str = "heuristic"
+    text: str = Field(min_length=1, max_length=12000)
+    method: Literal["heuristic", "crf"] = "heuristic"
     budget: float = Field(default=0.6, ge=0.1, le=1.0)
+
+    @field_validator("text")
+    @classmethod
+    def nonblank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Enter nonblank text.")
+        return value
 
 
 @router.post("/analyze")
 def analyze(request: CompressionRequest):
-    """Starter implementation. Tushar: replace with imported compressor + budget control."""
-    words = request.text.split()
-    keep = max(1, int(len(words) * request.budget))
-    compressed = " ".join(words[:keep]) if words else request.text
-    original_tokens = counter.count(request.text)
-    compressed_tokens = counter.count(compressed)
-    return {
-        "original": request.text,
-        "compressed": compressed,
-        "method": f"starter-{request.method}",
-        "budget": request.budget,
-        "original_tokens": original_tokens,
-        "compressed_tokens": compressed_tokens,
-        "saved_tokens": max(0, original_tokens - compressed_tokens),
-        "removed_spans": [{"text": w, "reason": "starter truncation"} for w in words[keep:][:12]],
-        "protected_spans": [],
-        "note": "Replace this starter with the imported CRF/heuristic compressor and protected spans.",
-    }
+    return get_service().analyze(request.text, request.method, request.budget)
+
+
+@router.get("/samples")
+def samples():
+    return {"kind": "upstream_regression_examples", "samples": [
+        {**sample, "source_url": source_url(sample["source"])} for sample in SAMPLES
+    ]}
+
+
+@router.get("/compare")
+def compare(budget: float = 0.6):
+    if not 0.1 <= budget <= 1:
+        raise HTTPException(422, "Budget must be between 0.1 and 1.")
+    return {"kind": "local_execution_on_regression_examples", "rows": [
+        {"sample_id": sample["id"], "label": sample["label"], "sample_source_url": source_url(sample["source"]),
+         **get_service().analyze(sample["text"], method, budget)}
+        for sample in SAMPLES for method in ("heuristic", "crf")
+    ]}
+
+
+@router.get("/evidence")
+def evidence():
+    try:
+        return get_evidence()
+    except (OSError, ValueError, KeyError) as exc:
+        raise HTTPException(503, "Historical evidence missing or fingerprint mismatch. "
+                            "Run python scripts/import_compression_evidence.py.") from exc

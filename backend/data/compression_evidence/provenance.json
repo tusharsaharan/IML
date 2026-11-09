@@ -1,0 +1,29 @@
+{
+  "repository": "https://github.com/tusharsaharan/Research",
+  "commit": "fa1258135268ca2650170a3f358975ce49169290",
+  "kind": "historical_development_evaluation",
+  "verification_scope": "Imported bytes fingerprinted; raw answer runs not rerun locally.",
+  "files": [
+    {
+      "source": "backend/data/bench/hinglish_scaleup_full_20261029/RESULTS.md",
+      "file": "RESULTS.md",
+      "url": "https://raw.githubusercontent.com/tusharsaharan/Research/fa1258135268ca2650170a3f358975ce49169290/backend/data/bench/hinglish_scaleup_full_20261029/RESULTS.md",
+      "sha256": "236d5aba4730038d4fcfd473e72aec319208dd12adf440849f8d7bd7c50d4ff3",
+      "bytes": 4182
+    },
+    {
+      "source": "backend/data/bench/hinglish_scaleup_full_20261029/verified_review.json",
+      "file": "verified_review.json",
+      "url": "https://raw.githubusercontent.com/tusharsaharan/Research/fa1258135268ca2650170a3f358975ce49169290/backend/data/bench/hinglish_scaleup_full_20261029/verified_review.json",
+      "sha256": "92c5f0b32668bf81f8713e5a21e1e2b3f4d6a5ef7197af11ad83825071ece9a2",
+      "bytes": 181406
+    },
+    {
+      "source": "backend/data/bench/hinglish_scaleup_full_20261029/stress_report.json",
+      "file": "stress_report.json",
+      "url": "https://raw.githubusercontent.com/tusharsaharan/Research/fa1258135268ca2650170a3f358975ce49169290/backend/data/bench/hinglish_scaleup_full_20261029/stress_report.json",
+      "sha256": "60237d9713b748961bdcbf96d5323f52d0d5aaed713114256c4499bddf2cb85d",
+      "bytes": 5695
+    }
+  ]
+}

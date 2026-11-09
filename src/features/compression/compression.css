@@ -1,0 +1,15 @@
+.compression-studio { min-width: 0; }
+.compression-workspace { background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 1rem; }
+.compression-select { min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--color-line-strong); border-radius: .5rem; background: var(--color-panel); color: var(--color-ink); font: inherit; }
+.compression-link { color: var(--color-accent-strong); text-decoration: underline; text-underline-offset: 3px; }
+.compression-mark { background: color-mix(in oklch, var(--color-accent) 14%, var(--color-panel)); color: var(--color-ink); text-decoration: underline; text-underline-offset: 3px; }
+.compression-removed { background: color-mix(in oklch, var(--color-warm) 18%, var(--color-panel)); text-decoration: line-through; }
+.compression-text { overflow-wrap: anywhere; white-space: pre-wrap; line-height: 1.8; }
+.compression-table-wrap { overflow-x: auto; max-width: 100%; }
+.compression-table { width: 100%; border-collapse: collapse; font-size: .875rem; text-align: left; font-variant-numeric: tabular-nums; }
+.compression-table caption { text-align: left; padding: .5rem 0 1rem; color: var(--color-muted); }
+.compression-table th, .compression-table td { padding: .85rem .75rem; border-bottom: 1px solid var(--color-line); vertical-align: top; }
+.compression-table thead { background: color-mix(in oklch, var(--color-line) 22%, var(--color-panel)); }
+.compression-table td { min-width: 6rem; }
+.compression-evidence { padding-top: 2rem; border-top: 1px solid var(--color-line-strong); }
+.compression-studio :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
