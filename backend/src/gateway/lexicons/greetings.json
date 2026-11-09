@@ -1,0 +1,25 @@
+{
+  "_comment": "Sentence-initial greeting prefixes, stripped before filler pruning. Order matters only for overlap; matching is regex-anchored at string start.",
+  "greetings": [
+    "hello ji",
+    "good morning",
+    "good afternoon",
+    "good evening",
+    "namaskaram",
+    "namaskar",
+    "namaste",
+    "sata sri akal",
+    "jai hind",
+    "hello",
+    "hii",
+    "hiii",
+    "hi",
+    "hey",
+    "heyy",
+    "yo",
+    "sir",
+    "madam",
+    "bro",
+    "dost"
+  ]
+}

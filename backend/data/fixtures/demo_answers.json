@@ -1,0 +1,17 @@
+[
+  {
+    "id": "library-renewal",
+    "match": ["renew", "library", "book", "kitab"],
+    "answer": "To renew a library book, sign in to the library portal, open your issued items, and choose Renew before the due date. If the book is reserved by another student or you have reached the renewal limit, the portal will ask you to visit the help desk. Demo answer for the course application."
+  },
+  {
+    "id": "wifi-support",
+    "match": ["wifi", "internet", "network", "connect", "login"],
+    "answer": "For campus Wi-Fi, connect to the official network, sign in with your institute account, and check that your device date and time are correct. If the login page does not appear, forget the network and reconnect. For repeated failures, contact IT support with your device details. Demo answer."
+  },
+  {
+    "id": "assignment-deadline",
+    "match": ["deadline", "assignment", "submit", "submission", "late"],
+    "answer": "Assignment deadlines are set in the course page. Submit before the listed time and keep the confirmation receipt or upload timestamp. If you expect a delay for a valid reason, contact the course staff before the deadline. Demo answer."
+  }
+]

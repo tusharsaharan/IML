@@ -1,0 +1,26 @@
+{
+  "_comment": "Multi-word filler phrases. Classes mirror fillers.json guards: unconditional (safe anywhere), non_initial (drop only when not sentence-initial), comma_or_punct (drop only when comma-adjacent on either side).",
+  "unconditional": [
+    "arre yaar",
+    "arey yaar",
+    "haan yaar",
+    "haan toh",
+    "matlab ki",
+    "sun na",
+    "dekho na",
+    "i mean",
+    "i am like",
+    "its like",
+    "it's like",
+    "arrey yaar",
+    "oh ho"
+  ],
+  "non_initial": [
+    "you know"
+  ],
+  "comma_or_punct": [
+    "sort of",
+    "kind of",
+    "type of"
+  ]
+}

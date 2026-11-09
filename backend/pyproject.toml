@@ -1,0 +1,36 @@
+[project]
+name = "iml-token-optimiser"
+version = "0.1.0"
+description = "CPU-first application workbench for cost-aware Hinglish LLM requests"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115,<1", "uvicorn>=0.30,<1", "pydantic-settings>=2.7,<3",
+  "httpx>=0.27,<1", "numpy>=2,<3", "scikit-learn>=1.6,<2",
+  "joblib>=1.4,<2", "tiktoken>=0.9,<1", "sklearn-crfsuite>=0.5,<1",
+  "tenacity>=8.3,<10", "python-dotenv>=1,<2"
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "pytest-asyncio>=0.24,<2", "ruff>=0.11,<1"]
+semantic = ["sentence-transformers>=3,<6"]
+compression = ["llmlingua>=0.2,<1", "transformers>=4.40,<5"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gateway"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 110
+exclude = ["src/gateway/modules", "src/gateway/lexicons", "src/gateway/llm.py", "src/gateway/schemas.py", "src/gateway/pricing.py", "src/gateway/tokenizer.py", "scripts/reference"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]

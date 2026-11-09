@@ -1,0 +1,1 @@
+"""Module 4: Cascade routing (difficulty scoring + dispatch)."""

@@ -1,0 +1,39 @@
+{
+  "_comment": "Vocative address terms. Dropped anywhere EXCEPT kinship/genitive use: never dropped when preceded by a possessive pronoun (mera/meri/mere/tera/teri/tere/humara/apna/uska/uski/unka...) or when directly followed by ka/ki/ke (genitive), e.g. 'mere bhai ka phone' keeps bhai.",
+  "vocatives": [
+    "bhai",
+    "behen",
+    "bro",
+    "dost",
+    "boss",
+    "guru",
+    "ji",
+    "buddy",
+    "dude",
+    "yaaron"
+  ],
+  "possessives": [
+    "mera",
+    "meri",
+    "mere",
+    "tera",
+    "teri",
+    "tere",
+    "humara",
+    "humari",
+    "humare",
+    "apna",
+    "apni",
+    "apne",
+    "uska",
+    "uski",
+    "uske",
+    "iska",
+    "iski",
+    "iske",
+    "unka",
+    "unki",
+    "unke"
+  ],
+  "genitive_particles": ["ka", "ki", "ke"]
+}

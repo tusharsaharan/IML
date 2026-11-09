@@ -1,0 +1,52 @@
+{
+  "_comment": "Hinglish filler taxonomy with homograph guards. Classes: unconditional (safe anywhere), initial_or_comma (attention-getters: drop only at sentence start or comma-adjacent; not_final=true also requires the token not be the last content token), comma_or_punct (hedges: drop only when comma-adjacent), non_initial (fillers that are content at sentence start), tech_guarded (matlab: drop only lowercase and not adjacent to software-context words).",
+  "unconditional": [
+    "arre",
+    "arrey",
+    "arey",
+    "basically",
+    "actually",
+    "toh",
+    "um",
+    "uh",
+    "umm",
+    "err",
+    "hmm",
+    "oh",
+    "oye",
+    "yaar",
+    "na",
+    "waise"
+  ],
+  "initial_or_comma": {
+    "haan": { "not_final": true },
+    "achha": { "not_final": true },
+    "accha": { "not_final": true },
+    "acha": { "not_final": true },
+    "achha": { "not_final": true },
+    "suno": {},
+    "dekho": {},
+    "bilkul": { "not_final": true }
+  },
+  "comma_or_punct": ["like", "well"],
+  "non_initial": ["matlab"],
+  "tech_guarded": {
+    "matlab": {
+      "tech_context": [
+        "download",
+        "install",
+        "software",
+        "license",
+        "version",
+        "code",
+        "tutorial",
+        "course",
+        "assignment",
+        "crack",
+        "keygen",
+        "free",
+        "student"
+      ]
+    }
+  }
+}

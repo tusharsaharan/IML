@@ -1,0 +1,1 @@
+"""Shared application core: configuration, storage, providers and request pipeline."""

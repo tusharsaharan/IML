@@ -1,0 +1,326 @@
+{
+  "repository": "https://github.com/tusharsaharan/Research",
+  "commit": "fa1258135268ca2650170a3f358975ce49169290",
+  "files": [
+    {
+      "source": "backend/src/gateway/__init__.py",
+      "destination": "backend/src/gateway/__init__.py",
+      "sha256": "1cb386121b6e20a2496b40240e5b6efd47053cc54391ace27deaf1d808230a1f"
+    },
+    {
+      "source": "backend/src/gateway/schemas.py",
+      "destination": "backend/src/gateway/schemas.py",
+      "sha256": "8b85a083133afd27280d2b489c4d0e154dab1b220bb8a3a5ee256e07e50b4b70"
+    },
+    {
+      "source": "backend/src/gateway/llm.py",
+      "destination": "backend/src/gateway/llm.py",
+      "sha256": "079bf3d0b32e442b5cb77a3cc4c98b856243749450d6c536e5a42d0baf2280d7"
+    },
+    {
+      "source": "backend/src/gateway/tokenizer.py",
+      "destination": "backend/src/gateway/tokenizer.py",
+      "sha256": "8729f688d3bc6ac8c781f60c33e29f618f3113a8ae47138a951e38283b97b2a3"
+    },
+    {
+      "source": "backend/src/gateway/pricing.py",
+      "destination": "backend/src/gateway/pricing.py",
+      "sha256": "06ae6eea1a64a81ce1baa4a3bb96199c11403162aae1c5afccf923757696020a"
+    },
+    {
+      "source": "backend/src/gateway/lexicons/__init__.py",
+      "destination": "backend/src/gateway/lexicons/__init__.py",
+      "sha256": "616e0fc2c1fceb22eba8d090abdab14bdbce425271a8c8046f302ed28c5aed80"
+    },
+    {
+      "source": "backend/src/gateway/lexicons/fillers.json",
+      "destination": "backend/src/gateway/lexicons/fillers.json",
+      "sha256": "b6b5c6683bc911e5e5f8be9494f9ecc5715cfc19ac78286b418be075ded9ce60"
+    },
+    {
+      "source": "backend/src/gateway/lexicons/greetings.json",
+      "destination": "backend/src/gateway/lexicons/greetings.json",
+      "sha256": "f643ccd3612953b259c7eb6c1cfea391823004c1902d5e6f058e07d0c9a4ebd1"
+    },
+    {
+      "source": "backend/src/gateway/lexicons/ngram_fillers.json",
+      "destination": "backend/src/gateway/lexicons/ngram_fillers.json",
+      "sha256": "177a37658c4dc76449ba39f5d3c0a00a03aaea3cd25ab3ff4ffba089b79239c4"
+    },
+    {
+      "source": "backend/src/gateway/lexicons/vocatives.json",
+      "destination": "backend/src/gateway/lexicons/vocatives.json",
+      "sha256": "28290dd913e084b1c46848bfe144fb5c0a38486c93b891b5629d0119021a0629"
+    },
+    {
+      "source": "backend/src/gateway/modules/__init__.py",
+      "destination": "backend/src/gateway/modules/__init__.py",
+      "sha256": "bb4d28b52678764934563d2157a40ce08b94372d532be11650038869ccd3b6f5"
+    },
+    {
+      "source": "backend/src/gateway/modules/m1_pipeline/__init__.py",
+      "destination": "backend/src/gateway/modules/m1_pipeline/__init__.py",
+      "sha256": "3193efd5428fca6e85b95df6e4eaa99be5147df24d064b9f9795476cf04243e2"
+    },
+    {
+      "source": "backend/src/gateway/modules/m1_pipeline/hinglish.py",
+      "destination": "backend/src/gateway/modules/m1_pipeline/hinglish.py",
+      "sha256": "d55a18151348428d7860b6d0f3d36f95cfcc9374ce14422d7b0f8fa9f4a69396"
+    },
+    {
+      "source": "backend/src/gateway/modules/m2_compressor/__init__.py",
+      "destination": "backend/src/gateway/modules/m2_compressor/__init__.py",
+      "sha256": "306498684b03009c3656d28cb01db5366bcb6daabdaccfb5dab2029785e463ed"
+    },
+    {
+      "source": "backend/src/gateway/modules/m2_compressor/budgeted.py",
+      "destination": "backend/src/gateway/modules/m2_compressor/budgeted.py",
+      "sha256": "277962e732f8d1f70bc61813ab5c751f11972dc7e54f77a2b703cc3b55e5b8ca"
+    },
+    {
+      "source": "backend/src/gateway/modules/m2_compressor/compressor.py",
+      "destination": "backend/src/gateway/modules/m2_compressor/compressor.py",
+      "sha256": "7114a74f6435f0498514647c982d07412d5f3c66e54e6a1a70676b6bd7b9e41e"
+    },
+    {
+      "source": "backend/src/gateway/modules/m2_compressor/crf_tagger.py",
+      "destination": "backend/src/gateway/modules/m2_compressor/crf_tagger.py",
+      "sha256": "e88136c720dbe6bf80c353793b802ac5c1e99b308633d8d525695075afe767a7"
+    },
+    {
+      "source": "backend/src/gateway/modules/m2_compressor/document.py",
+      "destination": "backend/src/gateway/modules/m2_compressor/document.py",
+      "sha256": "51f19c762af5dad77b67937e3aa0794a4f807efd8aa638d1369d98034a4442c8"
+    },
+    {
+      "source": "backend/src/gateway/modules/m2_compressor/guarded.py",
+      "destination": "backend/src/gateway/modules/m2_compressor/guarded.py",
+      "sha256": "4623ed72d40ecd9b6d4f584173dddaa8ea184e8002bd40f4b6c9439f3986dc9c"
+    },
+    {
+      "source": "backend/src/gateway/modules/m2_compressor/heuristic_passes.py",
+      "destination": "backend/src/gateway/modules/m2_compressor/heuristic_passes.py",
+      "sha256": "6fcad695e837460a73796cb79a805812e84f8708f9edc8b2932496a710d2aef2"
+    },
+    {
+      "source": "backend/src/gateway/modules/m2_compressor/hinglish_budget.py",
+      "destination": "backend/src/gateway/modules/m2_compressor/hinglish_budget.py",
+      "sha256": "affe428ff2cad37bca0b85198686d5ac3bd384b1ce1ad35a3a0d14a3b0bc1ed7"
+    },
+    {
+      "source": "backend/src/gateway/modules/m2_compressor/hinglish_evidence.py",
+      "destination": "backend/src/gateway/modules/m2_compressor/hinglish_evidence.py",
+      "sha256": "c05dc0a7d5bb198a04d039f52d2ed39c359ccf4ddd7556cfce3997577779f295"
+    },
+    {
+      "source": "backend/src/gateway/modules/m2_compressor/lexical_safe.py",
+      "destination": "backend/src/gateway/modules/m2_compressor/lexical_safe.py",
+      "sha256": "32f1e9e87945b031f72ecf43ec2680f892d6f271aae22b14980f293d5ff24006"
+    },
+    {
+      "source": "backend/src/gateway/modules/m2_compressor/linguistic.py",
+      "destination": "backend/src/gateway/modules/m2_compressor/linguistic.py",
+      "sha256": "e623c87c48da01200c0e3741f5e712bd96fca7ea263d057079aae03273e2c35d"
+    },
+    {
+      "source": "backend/src/gateway/modules/m2_compressor/llmlingua2.py",
+      "destination": "backend/src/gateway/modules/m2_compressor/llmlingua2.py",
+      "sha256": "df17fa188aee5c01479a0b15c203dced7d7c5abdadc217bab42c70d21e65d568"
+    },
+    {
+      "source": "backend/src/gateway/modules/m2_compressor/phonetic.py",
+      "destination": "backend/src/gateway/modules/m2_compressor/phonetic.py",
+      "sha256": "cba79b99b338b59b8848c377c62e0e790522037258a0f15810bef2a24d5f74df"
+    },
+    {
+      "source": "backend/src/gateway/modules/m2_compressor/prompts.py",
+      "destination": "backend/src/gateway/modules/m2_compressor/prompts.py",
+      "sha256": "ed31c6048c14070eb407abc02abf3a1c7dae13fc1e4c7c8798cff764d117fed0"
+    },
+    {
+      "source": "backend/src/gateway/modules/m2_compressor/qwen_evidence.py",
+      "destination": "backend/src/gateway/modules/m2_compressor/qwen_evidence.py",
+      "sha256": "07f0b418c5266d05e8be9b66b0fb4e81e9b89ad0c9102b0c9694c7831a7529c1"
+    },
+    {
+      "source": "backend/src/gateway/modules/m2_compressor/safety_span.py",
+      "destination": "backend/src/gateway/modules/m2_compressor/safety_span.py",
+      "sha256": "77ba60d463c4d8b6241b16bbed47689180cc0ee98882a42b01ec6ce6969918fa"
+    },
+    {
+      "source": "backend/src/gateway/modules/m2_compressor/semantic_ranker.py",
+      "destination": "backend/src/gateway/modules/m2_compressor/semantic_ranker.py",
+      "sha256": "62c641b2538fb74e73d92977853ef0ef1179cee3e6533c60f6b839de0459b3c9"
+    },
+    {
+      "source": "backend/src/gateway/modules/m2_compressor/tfidf.py",
+      "destination": "backend/src/gateway/modules/m2_compressor/tfidf.py",
+      "sha256": "a8fbb965e85b69c0a0895d5a37485850a99623ffd7671bfe6075361619fde5bb"
+    },
+    {
+      "source": "backend/src/gateway/modules/m3_conformal/__init__.py",
+      "destination": "backend/src/gateway/modules/m3_conformal/__init__.py",
+      "sha256": "938a5633fb505723bab0f969066259520f6592396b7b036b62f68209cd17c732"
+    },
+    {
+      "source": "backend/src/gateway/modules/m3_conformal/calibration_store.py",
+      "destination": "backend/src/gateway/modules/m3_conformal/calibration_store.py",
+      "sha256": "198cbef434737742006e6092e499c7d22c60fb771323fba8a72501674dbd81a2"
+    },
+    {
+      "source": "backend/src/gateway/modules/m3_conformal/conformal.py",
+      "destination": "backend/src/gateway/modules/m3_conformal/conformal.py",
+      "sha256": "587442087d40c1e7f25d6255dda741d2e4fcb28a2e14bc0ae32223bf48f68fe3"
+    },
+    {
+      "source": "backend/src/gateway/modules/m3_conformal/crc.py",
+      "destination": "backend/src/gateway/modules/m3_conformal/crc.py",
+      "sha256": "ec65fe69225376410148925e8aa5a0077752cf8df681fb7c7580b6d721a55d86"
+    },
+    {
+      "source": "backend/src/gateway/modules/m3_conformal/isotonic.py",
+      "destination": "backend/src/gateway/modules/m3_conformal/isotonic.py",
+      "sha256": "e5c35792dd281ff8ec9a7b441d22fa36ef18687e00421f00a0ff1646e6004536"
+    },
+    {
+      "source": "backend/src/gateway/modules/m4_router/__init__.py",
+      "destination": "backend/src/gateway/modules/m4_router/__init__.py",
+      "sha256": "88440d653e311508936f548753dc087d2294d4022027f00987e38c1c106f70b3"
+    },
+    {
+      "source": "backend/src/gateway/modules/m4_router/certified.py",
+      "destination": "backend/src/gateway/modules/m4_router/certified.py",
+      "sha256": "929fcf1cae75e28c14586d0d1fb6eefe0b3ee38bf6b0dac2f22f5147d22fc740"
+    },
+    {
+      "source": "backend/src/gateway/modules/m4_router/difficulty.py",
+      "destination": "backend/src/gateway/modules/m4_router/difficulty.py",
+      "sha256": "30d3c31e148a6342b999c9f1ab22e7808225a1fb22abe633c9ceb2cfaf94477f"
+    },
+    {
+      "source": "backend/src/gateway/modules/m4_router/learned_policy.py",
+      "destination": "backend/src/gateway/modules/m4_router/learned_policy.py",
+      "sha256": "7f0d2968745f362d122f860ba0a7a3f69f5623042de55078c9ea394beb578756"
+    },
+    {
+      "source": "backend/src/gateway/modules/m4_router/router.py",
+      "destination": "backend/src/gateway/modules/m4_router/router.py",
+      "sha256": "6d2794d8b85c4daf9428149ea02b558c7cb262c5891b69780b18c3fb9ab5a173"
+    },
+    {
+      "source": "backend/src/gateway/modules/m4_router/router_v2.py",
+      "destination": "backend/src/gateway/modules/m4_router/router_v2.py",
+      "sha256": "410d0953451cb21e923ab6d87de7f47599b682c09469da594dbd0ebe4fbedcc7"
+    },
+    {
+      "source": "backend/src/gateway/modules/m10_train/__init__.py",
+      "destination": "backend/src/gateway/modules/m10_train/__init__.py",
+      "sha256": "44ec2413f3c86f8964e86ac60533c16415afb73539e8823c6bc610283ecb22bf"
+    },
+    {
+      "source": "backend/src/gateway/modules/m10_train/reward.py",
+      "destination": "backend/src/gateway/modules/m10_train/reward.py",
+      "sha256": "6c19d54c2fb699b62300ea5e76e93dcb8097689453b245e0c2e5f91a7b1ff810"
+    },
+    {
+      "source": "backend/src/gateway/modules/m12_semantic/__init__.py",
+      "destination": "backend/src/gateway/modules/m12_semantic/__init__.py",
+      "sha256": "730fa303bc1b30cae6fca9bb4bf24569e93dfe0799b03201925c1ce881438f43"
+    },
+    {
+      "source": "backend/src/gateway/modules/m12_semantic/embeddings.py",
+      "destination": "backend/src/gateway/modules/m12_semantic/embeddings.py",
+      "sha256": "7f2fe5af82a9f383b737b70be50af266eda128372cd537176aa05f1c2a69967d"
+    },
+    {
+      "source": "backend/src/gateway/modules/m12_semantic/translate.py",
+      "destination": "backend/src/gateway/modules/m12_semantic/translate.py",
+      "sha256": "3f9c1db3fc50aa9bf2ed8a2d159b9007be96b23adc74f27e356156ca09252b03"
+    },
+    {
+      "source": "backend/data/models/crf_compressor.pkl",
+      "destination": "backend/data/models/crf_compressor.pkl",
+      "sha256": "cba86e5cc0022f7ce69dac118a3b4c19c6424b9ed6e9faa6b9c6c69caf04ee68"
+    },
+    {
+      "source": "backend/data/router_artifacts/certified_router.pkl",
+      "destination": "backend/data/router_artifacts/certified_router.pkl",
+      "sha256": "aec02597e9ff0571328e7062710d3a4363a5dff3944eaf2244da182d58730881"
+    },
+    {
+      "source": "backend/data/router_artifacts/certified_thresholds.json",
+      "destination": "backend/data/router_artifacts/certified_thresholds.json",
+      "sha256": "63c2b62fd3e962b746e130aa8ad924e9302fb4555c39d306a800683af5c7fb69"
+    },
+    {
+      "source": "backend/data/tfidf/hinglish_idf.json",
+      "destination": "backend/data/tfidf/hinglish_idf.json",
+      "sha256": "3014c7750b31a1af69ced9ad0404afb5ba87ca3aba804f8d373f931d6d756ecd"
+    },
+    {
+      "source": "backend/data/training/bootstrap_filtered.jsonl",
+      "destination": "backend/data/training/bootstrap_filtered.jsonl",
+      "sha256": "1b7d59b31e7e2eb16298003d3ca306fc4d82d14f75c65d5cb80010bcab8cd174"
+    },
+    {
+      "source": "src/components/ui/button.tsx",
+      "destination": "src/components/ui/button.tsx",
+      "sha256": "2c8aae724f8effc35a91f833f9c0e8dee010f5cb0b8698441001dac93e8811bf"
+    },
+    {
+      "source": "src/components/ui/card.tsx",
+      "destination": "src/components/ui/card.tsx",
+      "sha256": "c6e182e038df4994615be337e682910a3835594f12d7bf61ab0909e6518477b2"
+    },
+    {
+      "source": "src/components/ui/badge.tsx",
+      "destination": "src/components/ui/badge.tsx",
+      "sha256": "c57030b62760166ab4c3a36a220a45c7699d375f10671dbd54d8156fec04fd1c"
+    },
+    {
+      "source": "src/components/ui/input.tsx",
+      "destination": "src/components/ui/input.tsx",
+      "sha256": "4ee1c239851691038ddef07a1cac8f3d348a35ff5816ecc296d20c9803b1c3de"
+    },
+    {
+      "source": "src/components/ui/textarea.tsx",
+      "destination": "src/components/ui/textarea.tsx",
+      "sha256": "5af8d497b7b1c4f77399bf5b9f1861230d9950d0c2c5fe1bdbf8b3bdb6eab1e0"
+    },
+    {
+      "source": "src/components/ui/skeleton.tsx",
+      "destination": "src/components/ui/skeleton.tsx",
+      "sha256": "020954b8c6a47e7584eefee6af278bf8ce482b8152585b70052cf196b6fd79a5"
+    },
+    {
+      "source": "src/lib/utils.ts",
+      "destination": "src/lib/utils.ts",
+      "sha256": "c0adf27efbfa148d5abcf99e860f8e3e6c8fc77a1f99e023c08ef4f12e6ece29"
+    },
+    {
+      "source": "backend/scripts/train_crf.py",
+      "destination": "backend/scripts/reference/train_crf.py",
+      "sha256": "c6c745a643ef581568af51ec873dcd69fb8dc6771af2c4620bd5482ad70497e4"
+    },
+    {
+      "source": "backend/scripts/build_tfidf.py",
+      "destination": "backend/scripts/reference/build_tfidf.py",
+      "sha256": "53a9f65277a2dc66c1facc1dd0accc91922ea1cac0fd8a1a119ecf84af86cd4d"
+    },
+    {
+      "source": "backend/scripts/bench/router_train.py",
+      "destination": "backend/scripts/reference/bench/router_train.py",
+      "sha256": "486983663a2a09ef85f1caba82a0ac25b2aee19423380e2467dc7db09a28ef85"
+    },
+    {
+      "source": "backend/scripts/bench/router_baselines.py",
+      "destination": "backend/scripts/reference/bench/router_baselines.py",
+      "sha256": "3d56ce9105dc82142f22c7fa91215873c1b78290aac42d7ce500da2c9baa163c"
+    },
+    {
+      "source": "backend/scripts/bench/router_v2.py",
+      "destination": "backend/scripts/reference/bench/router_v2.py",
+      "sha256": "7785a90f3fe474fb3ed56f54f123e8ff328dbdc191983fa7376ce8e4e6c5876a"
+    }
+  ]
+}
