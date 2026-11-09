@@ -31,7 +31,16 @@ type LookupResult = {
   store_reason?: string;
 };
 
-type CacheStats = { total_lookups: number; exact_hits: number; semantic_hits: number; misses: number };
+type CacheStats = {
+  total_lookups: number;
+  exact_hits: number;
+  semantic_hits: number;
+  misses: number;
+  automatic_ttl_seconds?: number;
+  max_entries?: number;
+  semantic_threshold?: number;
+  embedding_backend?: string;
+};
 const emptyStats: CacheStats = { total_lookups: 0, exact_hits: 0, semantic_hits: 0, misses: 0 };
 const demoQuestions = [
   { label: 'Exact', text: 'How can I renew a library book?' },
@@ -210,11 +219,14 @@ export function CachePage() {
           <p className="mono mt-1 text-3xl font-semibold">{metric.value}</p>
         </Card>)}
       </section>
+      {typeof stats.automatic_ttl_seconds === 'number' && <p className="-mt-3 text-xs text-muted">
+        Automatically learned answers expire after {Math.round(stats.automatic_ttl_seconds / 86400)} days. Matching: {stats.embedding_backend === 'st' ? 'local multilingual model' : 'offline hash vectors'} (threshold {(stats.semantic_threshold ?? 0.55).toFixed(2)}).
+      </p>}
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
         <Card className="panel p-5 sm:p-6">
           <div className="flex items-center gap-2"><Search className="size-5 text-accent" /><h3 className="text-xl font-semibold">Ask the cache</h3></div>
-          <p className="mt-1 text-sm text-muted">Ask the platform to check the cache first, then use the configured answer provider on a miss. Eligible responses are saved automatically. Similarity uses deterministic CPU hash vectors.</p>
+          <p className="mt-1 text-sm text-muted">Ask the platform to check the cache first, then use the configured answer provider on a miss. Eligible responses are saved automatically. Matching uses offline vectors by default; a local multilingual model is optional.</p>
           <Textarea className="mt-4 min-h-28" value={question} onChange={(event) => setQuestion(event.target.value)} aria-label="Question to look up" placeholder="Ask a support question…" />
           <div className="mt-2 flex flex-wrap items-center gap-1 text-xs text-muted" aria-label="Demo cases">
             <span className="mr-1">Try:</span>

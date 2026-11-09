@@ -5,6 +5,7 @@ import re
 import sqlite3
 import unicodedata
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import numpy as np
 from fastapi import APIRouter, Header, HTTPException
@@ -18,11 +19,12 @@ from gateway.features.cache.settings import CacheSettings, get_cache_settings
 from gateway.modules.m12_semantic.embeddings import SemanticEmbedder
 
 router = APIRouter(prefix="/api/v1/cache", tags=["cache"])
-_embedder = SemanticEmbedder(use_st=False)
 _HINGLISH_EQUIVALENTS = {
     "kitab": "book", "kitabein": "books", "pustak": "book",
+    "kitaab": "book", "kitabe": "books",
     "kaise": "how", "kese": "how", "kaisa": "how",
     "karu": "do", "karoon": "do", "karo": "do", "karna": "do", "krun": "do", "krna": "do",
+    "karni": "do", "karne": "do", "kare": "do", "krega": "do",
     "ki": "", "ka": "", "ke": "", "ko": "", "kya": "what", "hai": "is", "hain": "are",
     "meri": "my", "mera": "my", "mere": "my", "chahiye": "need",
     "किताब": "book", "किताबें": "books", "पुस्तक": "book", "पुस्तकालय": "library",
@@ -30,6 +32,27 @@ _HINGLISH_EQUIVALENTS = {
     "कैसे": "how", "करूं": "do", "करूँ": "do", "करना": "do", "की": "", "का": "", "के": "",
     "है": "is", "हैं": "are", "मेरा": "my", "मेरी": "my",
 }
+
+
+def _build_embedder() -> SemanticEmbedder:
+    embedder = SemanticEmbedder(use_st=False)
+    model_path = get_cache_settings().embedding_model_path.strip()
+    if not model_path or not Path(model_path).is_dir():
+        return embedder
+    try:
+        from sentence_transformers import SentenceTransformer  # type: ignore[import-not-found]
+
+        embedder._st = SentenceTransformer(str(model_path), local_files_only=True)
+        embedder.backend = "st"
+        embedder.model_name = str(model_path)
+    except Exception:
+        # Missing/broken optional local model stays on the offline hash backend.
+        embedder._st = None
+        embedder.backend = "hash"
+    return embedder
+
+
+_embedder = _build_embedder()
 _EMAIL_RE = re.compile(r"\b[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}\b")
 _URL_RE = re.compile(r"\b(?:https?://|www\.)\S+", re.IGNORECASE)
 _ID_RE = re.compile(r"\b(?:student|account|order|ticket|roll|reference)\s*(?:id|number|no\.?|#)\s*[:#-]?\s*[a-z0-9-]{4,}\b", re.IGNORECASE)
@@ -102,7 +125,8 @@ def _cache_store() -> Store:
                     hit_count integer not null default 0,
                     expires_at text,
                     scope_id text not null default 'public',
-                    normalized text not null default ''
+                    normalized text not null default '',
+                    embedding_version text not null default 'hash-v1'
                 );
                 create index if not exists idx_cache_entry_runtime_expiry
                     on cache_entry_runtime(expires_at);
@@ -117,6 +141,8 @@ def _cache_store() -> Store:
             db.execute("alter table cache_entry_runtime add column scope_id text not null default 'public'")
         if "normalized" not in runtime_columns:
             db.execute("alter table cache_entry_runtime add column normalized text not null default ''")
+        if "embedding_version" not in runtime_columns:
+            db.execute("alter table cache_entry_runtime add column embedding_version text not null default 'hash-v1'")
         db.execute(
             """update cache_entry_runtime set normalized=(
                    select normalized from cache_entries where cache_entries.id=cache_entry_runtime.entry_id
@@ -142,9 +168,11 @@ def _validated_scope(scope_id: str) -> str:
 def _entries_for_scope(store: Store, scope_id: str) -> list[dict]:
     items = store.list_cache(get_cache_settings().max_entries)
     with store.connect() as db:
-        rows = db.execute("select entry_id from cache_entry_runtime where scope_id = ?", (scope_id,)).fetchall()
-    scoped_ids = {row["entry_id"] for row in rows}
-    return [item for item in items if item["id"] in scoped_ids]
+        rows = db.execute(
+            "select entry_id,embedding_version from cache_entry_runtime where scope_id = ?", (scope_id,)
+        ).fetchall()
+    versions = {row["entry_id"]: row["embedding_version"] for row in rows}
+    return [{**item, "embedding_version": versions[item["id"]]} for item in items if item["id"] in versions]
 
 
 def _maintain_cache(store: Store, cache_settings: CacheSettings) -> None:
@@ -201,17 +229,30 @@ def _semantic_text(text: str) -> str:
     return " ".join(_HINGLISH_EQUIVALENTS.get(word, word) for word in words if _HINGLISH_EQUIVALENTS.get(word, word))
 
 
+def _embedding_text(text: str) -> str:
+    return text if _embedder.backend == "st" else _semantic_text(text)
+
+
+def _embedding_version() -> str:
+    return f"st:{_embedder.model_name}" if _embedder.backend == "st" else "hash-v1"
+
+
+def _semantic_threshold() -> float:
+    configured = get_cache_settings().semantic_threshold
+    return max(configured, 0.75) if _embedder.backend == "st" else configured
+
+
 def _nearest(text: str, entries: list[dict]) -> tuple[dict | None, float]:
     if not entries:
         return None, 0.0
 
-    query_vector = _embedder.embed([_semantic_text(text)])[0]
+    query_vector = _embedder.embed([_embedding_text(text)])[0]
     vectors: list[list[float]] = []
     missing: list[tuple[int, list[float]]] = []
-    for index, item in enumerate(entries):
+    for item in entries:
         vector = item.get("embedding")
-        if not vector:
-            vector = _embedder.embed([_semantic_text(item["question"])])[0].tolist()
+        if not vector or item.get("embedding_version") != _embedding_version():
+            vector = _embedder.embed([_embedding_text(item["question"])])[0].tolist()
             missing.append((int(item["id"]), vector))
         vectors.append(vector)
 
@@ -221,6 +262,10 @@ def _nearest(text: str, entries: list[dict]) -> tuple[dict | None, float]:
             db.executemany(
                 "update cache_entries set embedding_json=? where id=?",
                 [(json.dumps(vector), entry_id) for entry_id, vector in missing],
+            )
+            db.executemany(
+                "update cache_entry_runtime set embedding_version=? where entry_id=?",
+                [(_embedding_version(), entry_id) for entry_id, _ in missing],
             )
 
     scores = np.clip(np.asarray(vectors, dtype=np.float64) @ query_vector, 0.0, 1.0)
@@ -270,7 +315,7 @@ def _lookup(text: str, language: str = "auto", scope_id: str = "public") -> dict
 
     best, best_score = _nearest(text, entries)
 
-    threshold = get_cache_settings().semantic_threshold
+    threshold = _semantic_threshold()
     if best is not None and best_score >= threshold:
         _touch_entry(best["id"], scope_id)
         _record_lookup("semantic", scope_id)
@@ -311,18 +356,19 @@ def _add_cache_entry(
     if existing:
         return int(existing["id"])
 
-    embedding = _embedder.embed([_semantic_text(question)])[0].tolist()
+    embedding = _embedder.embed([_embedding_text(question)])[0].tolist()
     entry_id = store.put_cache(question.strip(), normalized, answer.strip(), language, source, embedding)
     created_at = _now()
     expires_at = (created_at + timedelta(seconds=ttl_seconds)).isoformat() if ttl_seconds else None
     try:
         with store.connect() as db:
             db.execute(
-                """insert into cache_entry_runtime(entry_id,last_accessed_at,hit_count,expires_at,scope_id,normalized)
-                   values (?,?,0,?,?,?)
+                """insert into cache_entry_runtime(entry_id,last_accessed_at,hit_count,expires_at,scope_id,normalized,embedding_version)
+                   values (?,?,0,?,?,?,?)
                    on conflict(entry_id) do update set last_accessed_at=excluded.last_accessed_at,
-                     expires_at=excluded.expires_at,scope_id=excluded.scope_id,normalized=excluded.normalized""",
-                (entry_id, created_at.isoformat(), expires_at, scope_id, normalized),
+                     expires_at=excluded.expires_at,scope_id=excluded.scope_id,normalized=excluded.normalized,
+                     embedding_version=excluded.embedding_version""",
+                (entry_id, created_at.isoformat(), expires_at, scope_id, normalized, _embedding_version()),
             )
     except sqlite3.IntegrityError:
         # Another request inserted the same normalized question in this scope.
@@ -420,7 +466,7 @@ async def answer(
             "match_type": "none",
             "similarity": cached["similarity"] if cached else 0.0,
             "matched_question": cached["matched_question"] if cached else None,
-            "threshold": cached["threshold"] if cached else cache_settings.semantic_threshold,
+            "threshold": cached["threshold"] if cached else _semantic_threshold(),
             "stored": should_store,
             "cache_id": cache_id,
             "store_reason": store_reason,
@@ -509,6 +555,7 @@ def clear_entries(cache_scope: str = Header(default="public", alias="X-Cache-Sco
 def stats(cache_scope: str = Header(default="public", alias="X-Cache-Scope")):
     cache_scope = _validated_scope(cache_scope)
     store = _cache_store()
+    cache_settings = get_cache_settings()
     with store.connect() as db:
         rows = db.execute(
             "select match_type, count(*) as count from cache_lookup_events where scope_id = ? group by match_type",
@@ -527,4 +574,8 @@ def stats(cache_scope: str = Header(default="public", alias="X-Cache-Scope")):
         "entries": entry_count,
         "durable_backend": "sqlite",
         "redis_status": _hot_index().status(),
+        "embedding_backend": _embedder.backend,
+        "automatic_ttl_seconds": cache_settings.ttl_seconds,
+        "max_entries": cache_settings.max_entries,
+        "semantic_threshold": _semantic_threshold(),
     }

@@ -64,6 +64,22 @@ def test_devanagari_hindi_paraphrase_matches_authored_faq(client: TestClient):
     assert result["matched_question"] == "How can I renew a library book?"
 
 
+def test_unrelated_hinglish_prompt_does_not_reuse_an_english_faq(client: TestClient):
+    client.post("/api/v1/cache/seed")
+    result = client.post("/api/v1/cache/lookup", json={"text": "mera phone recharge kab khatam hoga"}).json()
+    assert result["hit"] is False
+    assert result["match_type"] == "none"
+
+
+def test_missing_local_embedding_model_keeps_offline_hash_backend(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(
+        cache_api,
+        "get_cache_settings",
+        lambda: CacheSettings(embedding_model_path=str(tmp_path / "not-installed")),
+    )
+    assert cache_api._build_embedder().backend == "hash"
+
+
 def test_different_details_are_not_reused(client: TestClient):
     client.post("/api/v1/cache/seed")
     result = client.post("/api/v1/cache/lookup", json={"text": "Can I change my exam date because I missed the bus?"}).json()

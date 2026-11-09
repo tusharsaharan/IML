@@ -11,7 +11,7 @@ The response reports whether it reused an answer, generated one, and stored it. 
 ## Storage and limits
 
 - SQLite is the durable source of truth and works offline without another service.
-- Automatically learned entries expire after 30 days by default. The cache evicts least recently used entries when it reaches its configured maximum.
+- Automatically learned entries expire 30 days after they are stored by default; hits do not extend that expiry. Seeded and manually authored entries have no time expiry, but can be deleted or LRU-evicted at capacity.
 - Set `IML_CACHE_TTL_SECONDS`, `IML_CACHE_MAX_ENTRIES` and `IML_CACHE_SEMANTIC_THRESHOLD` in the server `.env` to tune expiry, capacity and near-match strictness.
 - Entries, exact keys and lookup counters are partitioned by `X-Cache-Scope`. The demo creates a browser-local scope. In production, strip any client-provided scope header and set it from a verified account or tenant claim at the trusted gateway.
 - Redis or Valkey can optionally act as a hot index for exact matches. Install `python -m pip install -e "backend[cache-redis]"` and set `IML_CACHE_REDIS_URL=redis://127.0.0.1:6379/0`. If Redis is unavailable, requests fall back to SQLite.
@@ -20,6 +20,8 @@ The response reports whether it reused an answer, generated one, and stored it. 
 ## Reuse and privacy
 
 Exact matches normalize case, punctuation and whitespace. Near matches use the existing offline hashed word and character n-gram vectors, with a small Hinglish-to-English vocabulary bridge. Entry vectors are saved once and compared as a NumPy matrix on lookup, avoiding repeated embedding work for every candidate. Scores are similarity signals, not proof of equivalent meaning. Review the matched question and tune `IML_CACHE_SEMANTIC_THRESHOLD` against a labelled query set before enabling broad semantic reuse.
+
+The offline hash backend is the default and only covers known vocabulary bridges plus word/character overlap; it cannot guarantee that arbitrary English and Hinglish sentences are equivalent. For better cross-lingual retrieval, install the optional `semantic` extra, place a multilingual SentenceTransformers model on local disk, and set `IML_CACHE_EMBEDDING_MODEL_PATH` to that directory. The loader uses `local_files_only=True`; it will not download a model. The server raises the minimum similarity cutoff to 0.75 for this model backend unless you configure a higher threshold. Existing entry vectors are recomputed lazily if the backend changes.
 
 Automatic writes skip obvious email addresses, URLs, long numeric identifiers, common account/secret markers, and generic demo fallbacks. These checks are conservative filters, not a substitute for a full privacy classifier. This course app has no user authentication; the browser scope is not an authorization boundary. Do not cache personal, account-specific, or confidential prompts until trusted authentication and privacy controls are deployed.
 

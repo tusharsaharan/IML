@@ -21,6 +21,7 @@ class CacheSettings(BaseSettings):
     ttl_seconds: int = Field(default=60 * 60 * 24 * 30, ge=60)
     max_entries: int = Field(default=10_000, ge=100)
     semantic_threshold: float = Field(default=0.55, ge=0.0, le=1.0)
+    embedding_model_path: str = ""
     redis_url: str = ""
 
 
