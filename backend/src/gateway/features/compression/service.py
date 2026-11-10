@@ -68,6 +68,20 @@ def audit_diff(original: str, compressed: str) -> tuple[list[dict], list[dict]]:
     return removed, added
 
 
+def validate_phrases(text: str, phrases: list[str] | None) -> list[str]:
+    """Validate Studio literals without changing compressor input or inference."""
+    if phrases is None:
+        return []
+    if not isinstance(phrases, list) or len(phrases) > 20:
+        raise ValueError("Choose at most 20 phrases.")
+    for phrase in phrases:
+        if not isinstance(phrase, str) or not phrase.strip() or len(phrase) > 200:
+            raise ValueError("Each phrase must contain 1 to 200 characters of nonblank text.")
+        if phrase not in text:
+            raise ValueError(f"Phrase not found exactly in the source prompt: {phrase!r}.")
+    return list(dict.fromkeys(phrases))
+
+
 class CompressionService:
     def __init__(self, model_path: Path | None = None) -> None:
         self.counter = TokenCounter()
@@ -91,13 +105,15 @@ class CompressionService:
                         if row["destination"] == "backend/data/models/crf_compressor.pkl")
         return hashlib.sha256(self.model_path.read_bytes()).hexdigest() == expected
 
-    def analyze(self, text: str, method: str = "heuristic", budget: float = 0.6) -> dict:
+    def analyze(self, text: str, method: str = "heuristic", budget: float = 0.6,
+                protected_phrases: list[str] | None = None) -> dict:
         if not text.strip() or len(text) > 12000:
             raise ValueError("Enter 1 to 12,000 characters of nonblank text.")
         if method not in {"heuristic", "crf"}:
             raise ValueError("Choose heuristic or crf.")
         if not math.isfinite(budget) or not 0.1 <= budget <= 1:
             raise ValueError("Budget must be between 0.1 and 1.")
+        phrases = validate_phrases(text, protected_phrases)
         started = perf_counter()
         fallback_reason = None
         with self._lock:
@@ -115,6 +131,15 @@ class CompressionService:
                 if method == "crf":
                     fallback_reason = "Pinned CRF artifact or runtime unavailable; using the imported heuristic."
                 result = self.compressor.compress_heuristic(text)
+        # Post-run application guard only: no masking, preprocessing, new token
+        # decisions, re-inference or weight changes. The research result is kept.
+        candidate_text = result.compressed
+        checks = [{"text": phrase, "source_occurrences": text.count(phrase),
+                   "candidate_occurrences": candidate_text.count(phrase),
+                   "preserved_in_candidate": candidate_text.count(phrase) >= text.count(phrase)}
+                  for phrase in phrases]
+        protection_fallback = any(not check["preserved_in_candidate"] for check in checks)
+        output = text if protection_fallback else candidate_text
         protected = [sp.model_dump() for sp in detect_spans(text)]
         for match in re.finditer(r"\S+", text):
             if is_protected(normalize_chars(match.group())) and not any(
@@ -122,20 +147,41 @@ class CompressionService:
             ):
                 protected.append({"kind": "crf_negation_or_question", "text": match.group(),
                                   "start": match.start(), "end": match.end()})
+        for phrase in phrases:
+            protected.extend({"kind": "user_phrase", "text": phrase,
+                              "start": match.start(), "end": match.end()}
+                             for match in re.finditer(re.escape(phrase), text))
         protected.sort(key=lambda sp: sp["start"])
         # Surface checks are observations, not a semantic-equivalence score.
         for span in protected:
-            span["preserved"] = result.compressed.count(span["text"]) >= text.count(span["text"])
+            span["preserved"] = output.count(span["text"]) >= text.count(span["text"])
+            if phrases:
+                span["candidate_preserved"] = candidate_text.count(span["text"]) >= text.count(span["text"])
+        for check in checks:
+            check["output_occurrences"] = output.count(check["text"])
+            check["preserved_in_output"] = check["output_occurrences"] >= check["source_occurrences"]
         original_tokens = self.counter.count(text)
-        compressed_tokens = self.counter.count(result.compressed)
-        removed, added = audit_diff(text, result.compressed)
+        candidate_tokens = self.counter.count(candidate_text)
+        compressed_tokens = original_tokens if protection_fallback else candidate_tokens
+        candidate_removed, candidate_added = audit_diff(text, candidate_text)
+        removed, added = ([], []) if protection_fallback else (candidate_removed, candidate_added)
+        candidate = ({"compressed": candidate_text, "method": result.method,
+                      "compressed_tokens": candidate_tokens, "removed_spans": candidate_removed,
+                      "added_spans": candidate_added, "drop_records": [d.model_dump() for d in result.drops],
+                      "protected_preserved": all(sp["candidate_preserved"] for sp in protected),
+                      "fallback_reason": fallback_reason} if phrases else None)
         note = ("Imported guarded lexicon pruning." if result.method == "heuristic" else
                 "Imported CRF sequence tagging with phonetic/TF-IDF features and safety gates."
                 if result.method == "crf" else "Original text retained.")
+        if protection_fallback:
+            fallback_reason = "Protection fallback: a selected phrase lost occurrences in the compressor output. " \
+                              "The Studio retained the original prompt; the unchanged candidate is available in the audit."
+            note = "Post-run Studio literal check, not a research compressor change. Original text retained."
         target_tokens = max(1, math.floor(original_tokens * budget))
         return {
-            "original": text, "compressed": result.compressed, "requested_method": method,
-            "method": result.method, "budget": budget, "target_tokens": target_tokens,
+            "original": text, "compressed": output, "requested_method": method,
+            "method": "protection_fallback" if protection_fallback else result.method,
+            "budget": budget, "target_tokens": target_tokens,
             "budget_met": compressed_tokens <= target_tokens, "budget_tunable": False,
             "budget_note": "Heuristic and CRF have fixed learned/rule decisions, not rate tuning. "
                            "This target is checked, never enforced by truncation. 100% retains the original.",
@@ -145,7 +191,9 @@ class CompressionService:
             "tokenizer": self.counter.backend, "token_counts_are_billing": False,
             "removed_spans": removed, "added_spans": added, "protected_spans": protected,
             "protected_preserved": all(sp["preserved"] for sp in protected),
-            "drop_records": [d.model_dump() for d in result.drops],
+            "drop_records": [] if protection_fallback else [d.model_dump() for d in result.drops],
+            "protected_phrases": phrases, "phrase_checks": checks,
+            "protection_fallback": protection_fallback, "compression_candidate": candidate,
             "fallback_reason": fallback_reason, "note": note,
             "elapsed_ms": round((perf_counter() - started) * 1000, 3),
             "evidence_kind": "local_execution", "source_commit": COMMIT,

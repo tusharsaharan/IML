@@ -5,6 +5,27 @@ export interface TextSpan {
   reason?: string;
   kind?: string;
   preserved?: boolean;
+  candidate_preserved?: boolean;
+}
+
+export interface PhraseCheck {
+  text: string;
+  source_occurrences: number;
+  candidate_occurrences: number;
+  output_occurrences: number;
+  preserved_in_candidate: boolean;
+  preserved_in_output: boolean;
+}
+
+export interface CompressionCandidate {
+  compressed: string;
+  method: string;
+  compressed_tokens: number;
+  removed_spans: TextSpan[];
+  added_spans: TextSpan[];
+  drop_records: { token: string; category: string; rule: string }[];
+  protected_preserved: boolean;
+  fallback_reason: string | null;
 }
 
 export interface CompressionResult {
@@ -27,6 +48,10 @@ export interface CompressionResult {
   protected_spans: TextSpan[];
   protected_preserved: boolean;
   drop_records: { token: string; category: string; rule: string }[];
+  protected_phrases: string[];
+  phrase_checks: PhraseCheck[];
+  protection_fallback: boolean;
+  compression_candidate: CompressionCandidate | null;
   fallback_reason: string | null;
   note: string;
   elapsed_ms: number;

@@ -1,0 +1,324 @@
+{
+  "repository": "https://github.com/tusharsaharan/code-mixed-gateway",
+  "commit": "224d609237fcc67b5b83e029a9406e9fb7f51329",
+  "kind": "isolated_router_reference_import",
+  "runtime_integrated": false,
+  "source_bytes": "exact Git blobs; no algorithm edits or checkout newline conversions",
+  "authored_support_files": ["backend/scripts/reference/code_mixed_gateway_router/.gitattributes"],
+  "license": "No licence file or declared repository licence found at the pinned commit; not inferred.",
+  "missing_artifacts": [
+    "backend/data/router_artifacts/logreg.pkl",
+    "backend/data/router_artifacts/xgb.json",
+    "backend/data/router_artifacts/bandit_head.pt",
+    "backend/data/thresholds.json",
+    "backend/data/calibration_real.jsonl"
+  ],
+  "exclusions": [
+    "Credentials, .env files, databases, scratch scripts, Git history and unrelated UI/compression code",
+    "Raw prompt/answer corpora, notebook outputs, report PDFs and figures (no application metrics imported)",
+    "External Laya implementation/checkpoints and optional downloaded models",
+    "gateway.service and its compression/gateway dependency tree; run00_audit.py remains reference-only"
+  ],
+  "files": [
+    {
+      "source": ".gitignore",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/.gitignore",
+      "sha256": "c35a7970fa97f0da0bb183ab0054269a12bdcf698d19f3c83d99431e6f2e5208",
+      "bytes": 820
+    },
+    {
+      "source": "README.md",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/README.md",
+      "sha256": "c59caca28a7a3e080a8082d61f69d579afb80fee2d352e78f43a41d720041cab",
+      "bytes": 9058
+    },
+    {
+      "source": "backend/README.md",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/README.md",
+      "sha256": "722cb9b00bccd453281faf2fd69c6a66f719906e39c568b57a5873c580954087",
+      "bytes": 6003
+    },
+    {
+      "source": "backend/experiments/cascade_routing/data/calibration_laya.csv",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/experiments/cascade_routing/data/calibration_laya.csv",
+      "sha256": "7705923e98d1cfe324d9da021747863f8506cd7e98209795003280f8fd2a6f75",
+      "bytes": 4849
+    },
+    {
+      "source": "backend/experiments/cascade_routing/data/calibration_v2.csv",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/experiments/cascade_routing/data/calibration_v2.csv",
+      "sha256": "0c3087d606ded7f0f53bdf7badb07914110f4e6c66f2e46d921b32059e1140e8",
+      "bytes": 5285
+    },
+    {
+      "source": "backend/experiments/cascade_routing/scripts/calibrate_laya.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/experiments/cascade_routing/scripts/calibrate_laya.py",
+      "sha256": "ebb1b45dabaad97310b1f4a7f609912340d86cc5eca2b02557516133c2e59a60",
+      "bytes": 1914
+    },
+    {
+      "source": "backend/experiments/cascade_routing/scripts/calibrate_v2.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/experiments/cascade_routing/scripts/calibrate_v2.py",
+      "sha256": "b0b90a0139403d1c73e8fbf9fe69df1981bb4a8cb48a0dc00011ba5fe26ca43b",
+      "bytes": 1994
+    },
+    {
+      "source": "backend/experiments/cascade_routing/scripts/conformal.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/experiments/cascade_routing/scripts/conformal.py",
+      "sha256": "029d22f92eec2b524ffef68d870704825857e1a857bd62f2a7e3cc29678d41be",
+      "bytes": 3688
+    },
+    {
+      "source": "backend/experiments/cascade_routing/scripts/difficulty.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/experiments/cascade_routing/scripts/difficulty.py",
+      "sha256": "515ce43ce451aabd4f27cf5ee2549a5c26543e9fc326849023d4d43adb37eef2",
+      "bytes": 6580
+    },
+    {
+      "source": "backend/experiments/cascade_routing/scripts/route_prompts_laya.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/experiments/cascade_routing/scripts/route_prompts_laya.py",
+      "sha256": "ff47394944fdac13b71a59c6cbc08ba2bf5e41b3c47089a925a1ea3b4fca36c4",
+      "bytes": 4950
+    },
+    {
+      "source": "backend/experiments/cascade_routing/scripts/score_laya.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/experiments/cascade_routing/scripts/score_laya.py",
+      "sha256": "7c826b97f852de28fe65bada926771a5ed9d573cf5d65f672725381499db4676",
+      "bytes": 2521
+    },
+    {
+      "source": "backend/notebooks/README_ROUTER_RL.md",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/notebooks/README_ROUTER_RL.md",
+      "sha256": "6638068b8b92ac3a8f3bcafa3d4257a9de1f32d8cf6db80fe08fb3609b31970b",
+      "bytes": 1680
+    },
+    {
+      "source": "backend/pyproject.toml",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/pyproject.toml",
+      "sha256": "1df662f546010d4b2e1330f6e8bc10f1f4f1509c516fcd74141acddc3da674f3",
+      "bytes": 1623
+    },
+    {
+      "source": "backend/scripts/freeze_splits.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/scripts/freeze_splits.py",
+      "sha256": "9be400347f43f16c7947ef9b73fc000d0ec51e57dc8ce89acb10527afd3adf51",
+      "bytes": 2567
+    },
+    {
+      "source": "backend/scripts/router_track/README.md",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/scripts/router_track/README.md",
+      "sha256": "732863c71b8a4c86bdfe8d6cb298e2ce3449a4e403015b43adb8889632fd3896",
+      "bytes": 1505
+    },
+    {
+      "source": "backend/scripts/router_track/common.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/scripts/router_track/common.py",
+      "sha256": "9073b682ef9ba0ca3fc0a4b7eb90a3ff90046e89f2888b9843eaf1b0649e533b",
+      "bytes": 4300
+    },
+    {
+      "source": "backend/scripts/router_track/run00_audit.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/scripts/router_track/run00_audit.py",
+      "sha256": "a7c4cd8814be75ee053e1672be2416bd48efd5587da10c5be9558f9691a20530",
+      "bytes": 1871
+    },
+    {
+      "source": "backend/scripts/router_track/run01_queries.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/scripts/router_track/run01_queries.py",
+      "sha256": "fb3c2075e87fc557e51d4dad6358fdd0f62e94b621ad9841be29ed14153fa645",
+      "bytes": 1605
+    },
+    {
+      "source": "backend/scripts/router_track/run02_label.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/scripts/router_track/run02_label.py",
+      "sha256": "c5e63ad22aa3097b0601bab193872d3d681bc6f3fb2616d67e45ce5471392d26",
+      "bytes": 2652
+    },
+    {
+      "source": "backend/scripts/router_track/run02b_refill.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/scripts/router_track/run02b_refill.py",
+      "sha256": "1786d4a80288808c66aab91dad3bff9cc9de6a3b868a0d83cbef164c950f16e2",
+      "bytes": 2035
+    },
+    {
+      "source": "backend/scripts/router_track/run03_grade.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/scripts/router_track/run03_grade.py",
+      "sha256": "df6ef8922653bc7de595a5a9ef31485a72bb5da63804b7ada7831947c6903ee6",
+      "bytes": 3675
+    },
+    {
+      "source": "backend/scripts/router_track/run04_supervised.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/scripts/router_track/run04_supervised.py",
+      "sha256": "b4f00b7d957431b5dc75fc36040913fdab65f5a7d2e3ebb2eac92eb49649b0c0",
+      "bytes": 3459
+    },
+    {
+      "source": "backend/scripts/router_track/run05_bandit.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/scripts/router_track/run05_bandit.py",
+      "sha256": "7a5a4295d15863519951cc3a1ed785a9d8ccddcd5b061b93fbeccb9f44b01ab1",
+      "bytes": 3080
+    },
+    {
+      "source": "backend/scripts/router_track/run06_conformal.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/scripts/router_track/run06_conformal.py",
+      "sha256": "57d1a095472fdfcc2d964cb3a14d6e261eef551e59cffe0154810125564a8975",
+      "bytes": 2723
+    },
+    {
+      "source": "backend/scripts/router_track/run07_eval.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/scripts/router_track/run07_eval.py",
+      "sha256": "09b963af22a5a1a002180a01ecce8052aa586f1450bb4cb42d817bb332e61e94",
+      "bytes": 3290
+    },
+    {
+      "source": "backend/src/gateway/__init__.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/__init__.py",
+      "sha256": "27d88e51dd657a66c233fe2d6fdfdb26fa839c1814b66c510abe71e83843c52f",
+      "bytes": 111
+    },
+    {
+      "source": "backend/src/gateway/llm.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/llm.py",
+      "sha256": "11e3927eeb207c9f09c5ece3e1da54c7c639580157ca1e4c280b4bb2da75233a",
+      "bytes": 6735
+    },
+    {
+      "source": "backend/src/gateway/modules/__init__.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/modules/__init__.py",
+      "sha256": "bb4d28b52678764934563d2157a40ce08b94372d532be11650038869ccd3b6f5",
+      "bytes": 60
+    },
+    {
+      "source": "backend/src/gateway/modules/m10_train/__init__.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/modules/m10_train/__init__.py",
+      "sha256": "44ec2413f3c86f8964e86ac60533c16415afb73539e8823c6bc610283ecb22bf",
+      "bytes": 95
+    },
+    {
+      "source": "backend/src/gateway/modules/m10_train/reward.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/modules/m10_train/reward.py",
+      "sha256": "514665e67de584eb81c625b69d54cd5f5e38cd47221d5800898aca7c82dd8da5",
+      "bytes": 2533
+    },
+    {
+      "source": "backend/src/gateway/modules/m11_calibration/__init__.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/modules/m11_calibration/__init__.py",
+      "sha256": "adb4c58a168e81efd402569a36ab41577ea5c84a9538241eef3c0ea2f3cedbf6",
+      "bytes": 61
+    },
+    {
+      "source": "backend/src/gateway/modules/m11_calibration/ece.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/modules/m11_calibration/ece.py",
+      "sha256": "1260a461c876e5258985344356ef3b202135780cb6007a619ac2873db4ffe0c1",
+      "bytes": 1908
+    },
+    {
+      "source": "backend/src/gateway/modules/m12_semantic/__init__.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/modules/m12_semantic/__init__.py",
+      "sha256": "51f7804bee7e5f4021d64d2664e305e732d7f2c9198531150874466cd333b8da",
+      "bytes": 547
+    },
+    {
+      "source": "backend/src/gateway/modules/m12_semantic/embeddings.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/modules/m12_semantic/embeddings.py",
+      "sha256": "60559abdcad2323181967e292d6c9416d233704b6804ce4e54f722aa4d46e07a",
+      "bytes": 4719
+    },
+    {
+      "source": "backend/src/gateway/modules/m1_pipeline/__init__.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/modules/m1_pipeline/__init__.py",
+      "sha256": "3193efd5428fca6e85b95df6e4eaa99be5147df24d064b9f9795476cf04243e2",
+      "bytes": 64
+    },
+    {
+      "source": "backend/src/gateway/modules/m1_pipeline/hinglish.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/modules/m1_pipeline/hinglish.py",
+      "sha256": "6965378d4b1afd2243b62934e767e9151ce1ae2598243a4fe1a75eaf09ff2bce",
+      "bytes": 3599
+    },
+    {
+      "source": "backend/src/gateway/modules/m3_conformal/__init__.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/modules/m3_conformal/__init__.py",
+      "sha256": "938a5633fb505723bab0f969066259520f6592396b7b036b62f68209cd17c732",
+      "bytes": 50
+    },
+    {
+      "source": "backend/src/gateway/modules/m3_conformal/calibration_store.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/modules/m3_conformal/calibration_store.py",
+      "sha256": "c38b11ae07a0edc8f46a6c8514f394a3fcdd0a496e359d6e7b9bc8f9a73d531b",
+      "bytes": 2264
+    },
+    {
+      "source": "backend/src/gateway/modules/m3_conformal/conformal.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/modules/m3_conformal/conformal.py",
+      "sha256": "fbadbcfd735e58ca7b0022dbc4a87744fc61a343460ec53c8999caf443dec0ba",
+      "bytes": 14176
+    },
+    {
+      "source": "backend/src/gateway/modules/m3_conformal/crc.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/modules/m3_conformal/crc.py",
+      "sha256": "f186d4d829846cffb52856bcfb2c26ecc1a71d6bf78cd4afce4598b90ca5311e",
+      "bytes": 5084
+    },
+    {
+      "source": "backend/src/gateway/modules/m3_conformal/isotonic.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/modules/m3_conformal/isotonic.py",
+      "sha256": "7ab3db017589712ae9506e373a21edd2251124715a1a2bdca22bd18814e854de",
+      "bytes": 4133
+    },
+    {
+      "source": "backend/src/gateway/modules/m4_router/__init__.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/modules/m4_router/__init__.py",
+      "sha256": "88440d653e311508936f548753dc087d2294d4022027f00987e38c1c106f70b3",
+      "bytes": 64
+    },
+    {
+      "source": "backend/src/gateway/modules/m4_router/difficulty.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/modules/m4_router/difficulty.py",
+      "sha256": "52fb7db86629dcce760f80238c44744c202ac5d54080b599f558d9558ea41ca5",
+      "bytes": 1721
+    },
+    {
+      "source": "backend/src/gateway/modules/m4_router/learned_policy.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/modules/m4_router/learned_policy.py",
+      "sha256": "5c0873d00ab987715c762d2b3ec5a6b03d09b946510779fbc064b3bef78ab9ef",
+      "bytes": 3901
+    },
+    {
+      "source": "backend/src/gateway/modules/m4_router/router.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/modules/m4_router/router.py",
+      "sha256": "a124cf77d4e0c54d4cb3bd8bbb2bac5d182595ea276ae247dad2d95822090414",
+      "bytes": 2851
+    },
+    {
+      "source": "backend/src/gateway/pricing.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/pricing.py",
+      "sha256": "b32e9fd0df50975cac64ed691d084490ff2493f84923e0fb811164c39a274e02",
+      "bytes": 1092
+    },
+    {
+      "source": "backend/src/gateway/schemas.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/schemas.py",
+      "sha256": "98a853d86907006df43283bf31cea1de21579a5d83108a5e317a785124c1e815",
+      "bytes": 7906
+    },
+    {
+      "source": "backend/src/gateway/tokenizer.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/src/gateway/tokenizer.py",
+      "sha256": "f029f5f6749512d5a6fe7f87f2dd7f7006c6f5c468141141301d685cbc9e40cb",
+      "bytes": 1130
+    },
+    {
+      "source": "backend/tests/test_m3.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/tests/test_m3.py",
+      "sha256": "835e3f7e67d3da9b532660045d5bcd65611856b0616055f873021a5360c14e19",
+      "bytes": 1555
+    },
+    {
+      "source": "backend/tests/test_m4.py",
+      "destination": "backend/scripts/reference/code_mixed_gateway_router/backend/tests/test_m4.py",
+      "sha256": "5d305909637bad9727e9986f810caded6fe80587ef76ff72ab7cb5eab8663eb8",
+      "bytes": 1645
+    }
+  ]
+}

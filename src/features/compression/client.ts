@@ -22,6 +22,32 @@ export interface HighlightPart {
   kind: 'plain' | 'removed' | 'protected';
 }
 
+export function phraseSelection(value: string, text: string): { phrases: string[]; error: string } {
+  // Preserve literal whitespace and Unicode; blank lines are not selections.
+  const lines = value.split(/\r?\n/).filter((line) => line.trim());
+  const phrases = [...new Set(lines)];
+  if (lines.length > 20) return { phrases, error: 'Choose at most 20 phrases, one per line.' };
+  if (phrases.some((phrase) => Array.from(phrase).length > 200)) {
+    return { phrases, error: 'Each phrase must be at most 200 characters.' };
+  }
+  const missing = phrases.find((phrase) => !text.includes(phrase));
+  return { phrases, error: missing === undefined ? '' : `Phrase not found exactly in the source prompt: ${JSON.stringify(missing)}.` };
+}
+
+export function resultIsStale(result: CompressionResult | null, text: string, method: string,
+  budget: number, phrases: string[]): boolean {
+  return result !== null && (result.original !== text || result.requested_method !== method || result.budget !== budget
+    || JSON.stringify(result.protected_phrases ?? []) !== JSON.stringify(phrases));
+}
+
+export function acceptPhraseResult(result: CompressionResult, phrases: string[]): CompressionResult {
+  if (phrases.length && (JSON.stringify(result.protected_phrases) !== JSON.stringify(phrases)
+    || !Array.isArray(result.phrase_checks) || result.phrase_checks.length !== phrases.length)) {
+    throw new Error('The running backend does not support these phrase checks. Restart npm run dev and analyze again.');
+  }
+  return result;
+}
+
 export function highlightParts(text: string, removed: TextSpan[], protectedSpans: TextSpan[]): HighlightPart[] {
   // Python offsets count Unicode code points; JavaScript slice counts UTF-16.
   const chars = Array.from(text);

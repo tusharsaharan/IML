@@ -1,0 +1,1 @@
+"""Module 10: Pillar A — reward-trained compressor scaffold (GRPO + CPU distill fallback)."""

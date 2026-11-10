@@ -29,3 +29,27 @@ Build a model-selection workspace that explains why a request is routed to an ec
 - `/api/v1/routing/predict` returns policy-aware routing with real features.
 - The page shows model comparison metrics from a saved artifact or fixture.
 - Targeted tests cover feature extraction and policy threshold behavior.
+
+## Router source imported (2026-11-10)
+
+- Imported 50 pinned router/dependency/training/test/reference files from
+  `tusharsaharan/code-mixed-gateway@224d609237fcc67b5b83e029a9406e9fb7f51329`.
+- Location: `backend/scripts/reference/code_mixed_gateway_router/`; directory
+  structure and original source bytes are preserved. Existing Research modules,
+  `/api/v1/routing/predict` and the routing page were not replaced.
+- Import manifest: `docs/router-source-manifest.json`. Importer:
+  `scripts/import_router.py` (collision-refusing, commit-pinned, verify mode).
+- See `docs/router-import.md` for dependencies, source limitations and offline
+  test commands. `scripts/routing/check_import.py` isolates the upstream gateway
+  namespace and blocks network connections during verification.
+- The upstream tracked tree does not contain the trained learned-scorer weights
+  or frozen operational calibration artifacts. No model was trained/downloaded
+  and no provider was called as part of the import. The learned wrapper falls
+  back to heuristic without its artifacts; the two imported sweep CSVs are
+  historical reference data, not calibrated IML application policies.
+- A feature adapter and verified artifacts are still required for application
+  integration. Do not mix the older wrapper's paths/features with the newer
+  training track or the separate Laya experiment without an explicit handoff.
+- Verification: 50 source hashes matched; 18 isolated router checks and 128 IML
+  backend tests passed; `npm run check` passed 16 frontend tests, typechecking and
+  the build. Import/verification/test helpers passed targeted Ruff checks.

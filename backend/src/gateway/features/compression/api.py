@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .evidence import get_evidence
-from .service import SAMPLES, get_service, source_url
+from .service import SAMPLES, get_service, source_url, validate_phrases
 
 router = APIRouter(prefix="/api/v1/compression", tags=["compression"])
 
@@ -15,6 +15,7 @@ class CompressionRequest(BaseModel):
     text: str = Field(min_length=1, max_length=12000)
     method: Literal["heuristic", "crf"] = "heuristic"
     budget: float = Field(default=0.6, ge=0.1, le=1.0)
+    protected_phrases: list[str] = Field(default_factory=list, max_length=20)
 
     @field_validator("text")
     @classmethod
@@ -24,9 +25,15 @@ class CompressionRequest(BaseModel):
         return value
 
 
+    @model_validator(mode="after")
+    def valid_phrases(self) -> CompressionRequest:
+        self.protected_phrases = validate_phrases(self.text, self.protected_phrases)
+        return self
+
+
 @router.post("/analyze")
 def analyze(request: CompressionRequest):
-    return get_service().analyze(request.text, request.method, request.budget)
+    return get_service().analyze(request.text, request.method, request.budget, request.protected_phrases)
 
 
 @router.get("/samples")
