@@ -1,0 +1,192 @@
+[
+  {
+    "id": "cap-sample-library",
+    "topic": "Library Book Renewal",
+    "language": "en",
+    "base_prompt": "How do I renew my library book online before the due date?",
+    "strategies": [
+      {
+        "strategy_id": "unconstrained",
+        "label": "Unconstrained (No cap)",
+        "format_constraint": "none",
+        "max_tokens": null,
+        "prompt_sent": "How do I renew my library book online before the due date?",
+        "response": "To renew your library book online, visit the university library portal and sign in with your student credentials. Navigate to 'My Account' or 'Issued Items' from the main dashboard. Find the title you wish to keep longer and click the 'Renew' button next to it. Verify that the new due date is updated on your screen. Please note that if another student has placed a hold or reservation on the book, or if you have exceeded the maximum allowed renewal limit of three times, online renewal will not be permitted and you will need to return the item to the circulation desk in person.",
+        "input_tokens": 12,
+        "output_tokens": 105,
+        "total_tokens": 117,
+        "tokens_saved": 0,
+        "percent_saved": 0.0,
+        "cost_est_usd": 0.0000324,
+        "cost_saved_usd": 0.0
+      },
+      {
+        "strategy_id": "max_tokens_50",
+        "label": "Hard Token Cap (max_tokens=50)",
+        "format_constraint": "none",
+        "max_tokens": 50,
+        "prompt_sent": "How do I renew my library book online before the due date?",
+        "response": "To renew your library book online, log in to the library portal with your student ID. Open 'Issued Items', locate the book, and click 'Renew'. Check the updated due date. If reserved by others or at limit, return in person.",
+        "input_tokens": 12,
+        "output_tokens": 46,
+        "total_tokens": 58,
+        "tokens_saved": 59,
+        "percent_saved": 56.2,
+        "cost_est_usd": 0.0000147,
+        "cost_saved_usd": 0.0000177
+      },
+      {
+        "strategy_id": "three_bullets",
+        "label": "Format constraint: '3 bullets'",
+        "format_constraint": "3 bullets",
+        "max_tokens": null,
+        "prompt_sent": "How do I renew my library book online before the due date? Answer in 3 bullets.",
+        "response": "• Log in to the library web portal and navigate to 'My Issued Items'.\n• Select the book and click 'Renew' to extend the due date.\n• If reserved or limit reached, return the book to the help desk.",
+        "input_tokens": 16,
+        "output_tokens": 42,
+        "total_tokens": 58,
+        "tokens_saved": 63,
+        "percent_saved": 60.0,
+        "cost_est_usd": 0.0000138,
+        "cost_saved_usd": 0.0000186
+      },
+      {
+        "strategy_id": "json_only",
+        "label": "Format constraint: 'JSON only'",
+        "format_constraint": "JSON only",
+        "max_tokens": 60,
+        "prompt_sent": "How do I renew my library book online? Output JSON only: {\"steps\": [...], \"restrictions\": \"...\"}",
+        "response": "{\"steps\": [\"Login to portal\", \"Open Issued Items\", \"Click Renew\"], \"restrictions\": \"Cannot renew if reserved or limit reached\"}",
+        "input_tokens": 24,
+        "output_tokens": 33,
+        "total_tokens": 57,
+        "tokens_saved": 72,
+        "percent_saved": 68.6,
+        "cost_est_usd": 0.0000117,
+        "cost_saved_usd": 0.0000207
+      },
+      {
+        "strategy_id": "no_preamble_max30",
+        "label": "No preamble + max_tokens=30",
+        "format_constraint": "no preamble",
+        "max_tokens": 30,
+        "prompt_sent": "How do I renew my library book online? No preamble, direct instructions only.",
+        "response": "Log in to library portal, open 'Issued Items', and click 'Renew' before due date.",
+        "input_tokens": 16,
+        "output_tokens": 18,
+        "total_tokens": 34,
+        "tokens_saved": 87,
+        "percent_saved": 82.9,
+        "cost_est_usd": 0.0000066,
+        "cost_saved_usd": 0.0000258
+      }
+    ]
+  },
+  {
+    "id": "cap-sample-wifi-hinglish",
+    "topic": "Campus Wi-Fi (Hinglish)",
+    "language": "hinglish",
+    "base_prompt": "Campus Wi-Fi connect nahi ho raha hai laptop pe, kya steps follow karun?",
+    "strategies": [
+      {
+        "strategy_id": "unconstrained",
+        "label": "Unconstrained (No cap)",
+        "format_constraint": "none",
+        "max_tokens": null,
+        "prompt_sent": "Campus Wi-Fi connect nahi ho raha hai laptop pe, kya steps follow karun?",
+        "response": "Campus Wi-Fi connect karne ke liye sabse pehle Wi-Fi settings me jaakar official campus network select karein. Browser open karke sign-in portal par apne institute roll number aur password se authenticate karein. Agar captive portal page load nahi ho raha hai, toh network ko 'Forget' karein aur restart karke dobara connect karein. Saath hi check karein ki device ka date aur time accurate hai kyunki certificate validation fail hone se connection ruk sakta hai. Phir bhi issue solve na ho toh IT helpdesk visit karein.",
+        "input_tokens": 16,
+        "output_tokens": 108,
+        "total_tokens": 124,
+        "tokens_saved": 0,
+        "percent_saved": 0.0,
+        "cost_est_usd": 0.0000336,
+        "cost_saved_usd": 0.0
+      },
+      {
+        "strategy_id": "three_bullets",
+        "label": "Format constraint: '3 bullets'",
+        "format_constraint": "3 bullets",
+        "max_tokens": 50,
+        "prompt_sent": "Campus Wi-Fi connect nahi ho raha laptop pe. 3 bullets me solution do.",
+        "response": "• Campus network select karke captive portal par institute ID login karein.\n• Portal na aaye toh network Forget karke reconnect karein.\n• Problem bani rahe toh date/time sync check karein ya IT desk contact karein.",
+        "input_tokens": 18,
+        "output_tokens": 44,
+        "total_tokens": 62,
+        "tokens_saved": 64,
+        "percent_saved": 59.3,
+        "cost_est_usd": 0.0000145,
+        "cost_saved_usd": 0.0000191
+      },
+      {
+        "strategy_id": "no_preamble_max30",
+        "label": "No preamble + max_tokens=25",
+        "format_constraint": "no preamble",
+        "max_tokens": 25,
+        "prompt_sent": "Campus Wi-Fi fix: No preamble, direct 2 steps only.",
+        "response": "1. Campus network Forget karke reconnect karein.\n2. Browser me portal login verify karein.",
+        "input_tokens": 13,
+        "output_tokens": 20,
+        "total_tokens": 33,
+        "tokens_saved": 88,
+        "percent_saved": 81.5,
+        "cost_est_usd": 0.0000070,
+        "cost_saved_usd": 0.0000266
+      }
+    ]
+  },
+  {
+    "id": "cap-sample-deadline-hindi",
+    "topic": "Assignment Deadline (Hindi)",
+    "language": "hi",
+    "base_prompt": "असाइनमेंट सबमिशन की अंतिम तिथि और लेट पेनल्टी नियम क्या हैं?",
+    "strategies": [
+      {
+        "strategy_id": "unconstrained",
+        "label": "Unconstrained (No cap)",
+        "format_constraint": "none",
+        "max_tokens": null,
+        "prompt_sent": "असाइनमेंट सबमिशन की अंतिम तिथि और लेट पेनल्टी नियम क्या हैं?",
+        "response": "असाइनमेंट सबमिशन की अंतिम तिथि कोर्स पोर्टल के डैशबोर्ड पर सूचीबद्ध होती है। सभी विद्यार्थियों को समय सीमा से पूर्व अपना कार्य जमा करने की सलाह दी जाती है। यदि आप समय सीमा के बाद असाइनमेंट जमा करते हैं, तो प्रतिदिन 10% अंक काटे जाएंगे। अधिकतम 48 घंटे के बाद सबमिशन स्वीकार नहीं किया जाएगा। चिकित्सा या अन्य आपात स्थिति में छूट प्राप्त करने हेतु समय सीमा समाप्त होने से पूर्व कोर्स इंस्ट्रक्टर से संपर्क करें।",
+        "input_tokens": 24,
+        "output_tokens": 98,
+        "total_tokens": 122,
+        "tokens_saved": 0,
+        "percent_saved": 0.0,
+        "cost_est_usd": 0.0000312,
+        "cost_saved_usd": 0.0
+      },
+      {
+        "strategy_id": "three_bullets",
+        "label": "Format constraint: '3 bullets'",
+        "format_constraint": "3 bullets",
+        "max_tokens": 50,
+        "prompt_sent": "असाइनमेंट सबमिशन नियम: केवल 3 मुख्य बिंदु।",
+        "response": "• समय सीमा से पहले पोर्टल पर सबमिट करें।\n• देर से जमा करने पर प्रति दिन 10% अंक कटेंगे।\n• 48 घंटे बाद कोई सबमिशन स्वीकार नहीं होगा।",
+        "input_tokens": 16,
+        "output_tokens": 41,
+        "total_tokens": 57,
+        "tokens_saved": 57,
+        "percent_saved": 58.2,
+        "cost_est_usd": 0.0000135,
+        "cost_saved_usd": 0.0000177
+      },
+      {
+        "strategy_id": "json_only",
+        "label": "Format constraint: 'JSON only'",
+        "format_constraint": "JSON only",
+        "max_tokens": 40,
+        "prompt_sent": "असाइनमेंट लेट पेनल्टी नियम: केवल JSON प्रारूप {\"penalty_per_day\": \"...\", \"max_delay\": \"...\"}",
+        "response": "{\"penalty_per_day\": \"10%\", \"max_delay\": \"48 hours\"}",
+        "input_tokens": 26,
+        "output_tokens": 19,
+        "total_tokens": 45,
+        "tokens_saved": 79,
+        "percent_saved": 80.6,
+        "cost_est_usd": 0.0000077,
+        "cost_saved_usd": 0.0000235
+      }
+    ]
+  }
+]
+
