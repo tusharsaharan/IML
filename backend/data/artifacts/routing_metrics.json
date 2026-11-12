@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-12T13:27:02+00:00",
+  "random_seed": 42,
+  "library_versions": {
+    "python": "3.11.9",
+    "scikit-learn": "1.9.1",
+    "numpy": "2.4.6",
+    "joblib": "1.6.0"
+  },
+  "dataset": {
+    "path": "backend/data/fixtures/routing_prompts.jsonl",
+    "sha256": "845df4a051807a8494e14e791c342732131606daf52005431062635714175889",
+    "rows": 300,
+    "train_rows": 240,
+    "test_rows": 60,
+    "class_counts": {
+      "economy": 165,
+      "stronger": 135
+    },
+    "group_counts": {
+      "english": 100,
+      "hinglish": 100,
+      "hindi": 50,
+      "mixed_script": 50
+    },
+    "label_source_note": "authored fixture labels, not measured model correctness"
+  },
+  "evaluation_method": {
+    "labels": "0 = economy, 1 = stronger",
+    "split": "stratified by label x group, 80/20 train/test, random_state=42",
+    "cv": "stratified 5-fold on the 80% train split, per-fold F1 for the stronger class",
+    "test": "held-out 20% test set; accuracy, precision, recall and F1 for the stronger class",
+    "confusion_matrix": "rows are true labels, columns are predicted labels, order economy then stronger",
+    "threshold": "out-of-fold predicted probabilities on the train split; maximise F1, ties to 0.5"
+  },
+  "feature_names": [
+    "char_length",
+    "word_count",
+    "devanagari_ratio",
+    "latin_ratio",
+    "code_mix_ratio",
+    "roman_hindi_ratio",
+    "lang_english",
+    "lang_hinglish",
+    "lang_mixed_script",
+    "lang_hindi",
+    "difficulty_entity_density",
+    "difficulty_math_marker_count",
+    "has_digits",
+    "has_math_symbols",
+    "has_code_markers",
+    "has_email_or_amount"
+  ],
+  "models": {
+    "logistic_regression": {
+      "accuracy": 0.8833,
+      "precision": 0.9167,
+      "recall": 0.8148,
+      "f1": 0.8627,
+      "confusion_matrix": [
+        [
+          31,
+          2
+        ],
+        [
+          5,
+          22
+        ]
+      ],
+      "support": {
+        "economy": 33,
+        "stronger": 27,
+        "total": 60
+      },
+      "cv_f1_mean": 0.7598,
+      "cv_f1_std": 0.0689,
+      "params": {
+        "scaler": "StandardScaler",
+        "max_iter": 1000,
+        "solver": "lbfgs",
+        "random_state": 42
+      }
+    },
+    "random_forest": {
+      "accuracy": 0.9333,
+      "precision": 0.96,
+      "recall": 0.8889,
+      "f1": 0.9231,
+      "confusion_matrix": [
+        [
+          32,
+          1
+        ],
+        [
+          3,
+          24
+        ]
+      ],
+      "support": {
+        "economy": 33,
+        "stronger": 27,
+        "total": 60
+      },
+      "cv_f1_mean": 0.8972,
+      "cv_f1_std": 0.0347,
+      "params": {
+        "n_estimators": 100,
+        "max_depth": 6,
+        "random_state": 42
+      }
+    },
+    "mlp": {
+      "accuracy": 0.95,
+      "precision": 1.0,
+      "recall": 0.8889,
+      "f1": 0.9412,
+      "confusion_matrix": [
+        [
+          33,
+          0
+        ],
+        [
+          3,
+          24
+        ]
+      ],
+      "support": {
+        "economy": 33,
+        "stronger": 27,
+        "total": 60
+      },
+      "cv_f1_mean": 0.8574,
+      "cv_f1_std": 0.056,
+      "params": {
+        "scaler": "StandardScaler",
+        "hidden_layer_sizes": [
+          16
+        ],
+        "max_iter": 500,
+        "random_state": 42
+      },
+      "converged": false,
+      "n_iter": 500
+    }
+  },
+  "primary_model": "random_forest",
+  "threshold": {
+    "value": 0.5296,
+    "method": "out-of-fold train probabilities (5-fold), F1-maximising, ties closest to 0.5",
+    "out_of_fold_f1": 0.9048
+  },
+  "policies": {
+    "economy": {
+      "threshold": 0.6796,
+      "note": "Authored policy offset: balanced + 0.15, clipped to [0.05, 0.95]."
+    },
+    "balanced": {
+      "threshold": 0.5296,
+      "note": "F1-maximising threshold from out-of-fold train probabilities (authored labels), kept inside [0.2, 0.8] so the policy offsets stay ordered."
+    },
+    "quality": {
+      "threshold": 0.3796,
+      "note": "Authored policy offset: balanced - 0.15, clipped to [0.05, 0.95]."
+    }
+  },
+  "per_group_accuracy": {
+    "english": {
+      "accuracy": 0.9,
+      "support": 20
+    },
+    "hindi": {
+      "accuracy": 1.0,
+      "support": 10
+    },
+    "hinglish": {
+      "accuracy": 0.9,
+      "support": 20
+    },
+    "mixed_script": {
+      "accuracy": 1.0,
+      "support": 10
+    }
+  },
+  "notes": [
+    "Routing labels are authored fixtures. Metrics show how well the classifiers reproduce those labels, not real model answer quality, routing savings or provider behaviour.",
+    "Dataset: 300 authored prompts; the held-out test set has 60 rows, so metric uncertainty is high.",
+    "Primary model is random_forest because its cross-validation F1 clearly beat logistic regression by at least 0.02; logistic regression is still fitted and saved for the explanation panel.",
+    "Balanced threshold 0.5296 maximises out-of-fold F1 (0.9048) on the train split; ties go to the value closest to 0.5.",
+    "Policy thresholds are authored offsets, not learned or certified values. score >= threshold routes to the stronger tier; score < threshold routes to economy.",
+    "Per-group accuracy uses only the held-out test rows; several groups have very few rows (see per_group_accuracy support), so these values are indicative, not guarantees.",
+    "No hyperparameters were tuned on the test set.",
+    "MLP did not converge within 500 iterations (n_iter=500); its test metrics may understate a longer training run."
+  ]
+}
