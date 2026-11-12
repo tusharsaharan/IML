@@ -154,13 +154,13 @@ class RoutingService:
             "explanation": _explanation(features, policy, score, threshold, tier, proxy=False),
             "note": TRAINED_NOTE,
             "scorer": {
-                "requested": "trained_logistic_regression",
+                "requested": f"trained_{self.bundle.primary}",
                 "actual": f"trained_{self.bundle.primary}",
                 "proxy": False,
                 "reason": (
-                    f"Artifact primary model is {self.bundle.primary} (selected by the "
-                    "cross-validation F1 rule); logistic regression is still fitted and saved "
-                    "for the explanation panel."
+                    f"Primary model per the metrics artifact: {self.bundle.primary} "
+                    "(chosen by the cross-validation F1 rule). The other two models' scores "
+                    "are shown for comparison and do not decide the route."
                 ),
             },
             "artifact": {
@@ -202,7 +202,7 @@ class RoutingService:
             "explanation": _explanation(features, policy, score, threshold, tier, proxy=True),
             "note": f"{FALLBACK_NOTE} {self.fallback_reason}",
             "scorer": {
-                "requested": "trained_logistic_regression",
+                "requested": "trained_model",
                 "actual": "starter_heuristic",
                 "proxy": True,
                 "reason": self.fallback_reason,

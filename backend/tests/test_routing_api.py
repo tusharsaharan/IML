@@ -65,6 +65,7 @@ def test_missing_artifact_falls_back_to_starter_heuristic(tmp_path, monkeypatch)
     monkeypatch.setattr(routing_service, "ARTIFACTS", tmp_path / "absent")
     monkeypatch.setattr(routing_api, "get_service", lambda: RoutingService())
     body = predict("bhai kal chutti hai kya")
+    assert body["scorer"]["requested"] == "trained_model"
     assert body["scorer"]["actual"] == "starter_heuristic"
     assert body["scorer"]["proxy"] is True
     assert body["selected_tier"] in {"strong", "cheap"}
@@ -107,6 +108,7 @@ def test_trained_response_keeps_contract_and_adds_audit_fields():
     assert body["labels_are_authored"] is True
     assert body["scorer"]["proxy"] is False
     assert body["scorer"]["actual"] == f"trained_{service.bundle.primary}"
+    assert body["scorer"]["requested"] == body["scorer"]["actual"]
     assert body["artifact"]["path"] == "backend/data/artifacts/routing_metrics.json"
     assert body["artifact"]["dataset_rows"] >= 1
     assert isinstance(body["explanation"], list) and 2 <= len(body["explanation"]) <= 3
