@@ -4,7 +4,7 @@
 routing classifiers in this course demo. It was authored for this repository; it is
 not measured model behaviour and not an evaluation benchmark.
 
-Prompts and labels were drafted by an AI agent under the rubric above and reviewed by Rakesh (45 rows reviewed).  is a placeholder for Rakesh to replace after the manual review described at the end of this file.
+Prompts and labels were drafted by an AI agent under the rubric above and reviewed by Rakesh (45 rows reviewed).
 
 Labels are authored fixtures for a course demo: they do not measure real model correctness, cost savings or provider behaviour.
 
