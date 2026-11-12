@@ -2,12 +2,15 @@ import { describe, expect, it } from 'vitest';
 import {
   buildPolicyComparison,
   fallbackNotice,
+  featureRows,
   formatScore,
   modelAgreement,
+  modelScoreRows,
+  primaryModelName,
   tierLabel,
 } from './helpers';
 import { ROUTING_PRESETS } from './presets';
-import type { RoutingModelScores, RoutingScorer } from './types';
+import type { RoutingFeatures, RoutingModelScores, RoutingScorer } from './types';
 
 function scorer(overrides: Partial<RoutingScorer> = {}): RoutingScorer {
   return {
@@ -94,6 +97,65 @@ describe('modelAgreement', () => {
       below: [],
       agree: true,
     });
+  });
+});
+
+describe('model score and feature rows', () => {
+  it('strips the trained prefix but leaves fallback names alone', () => {
+    expect(primaryModelName('trained_random_forest')).toBe('random_forest');
+    expect(primaryModelName('starter_heuristic')).toBe('starter_heuristic');
+  });
+
+  it('marks exactly the primary classifier and labels all three', () => {
+    const rows = modelScoreRows(
+      { logistic_regression: 0.767, random_forest: 0.464, mlp: 0.378 },
+      'random_forest',
+    );
+    expect(rows.map((row) => row.label)).toEqual([
+      'Logistic regression',
+      'Random forest',
+      'MLP (neural network)',
+    ]);
+    expect(rows.filter((row) => row.isPrimary).map((row) => row.key)).toEqual(['random_forest']);
+  });
+
+  it('labels every returned feature and explains counts and flags', () => {
+    const features: RoutingFeatures = {
+      char_length: 33,
+      word_count: 5,
+      devanagari_ratio: 0,
+      latin_ratio: 1,
+      code_mix_ratio: 0,
+      roman_hindi_ratio: 0,
+      lang_english: 1,
+      lang_hinglish: 0,
+      lang_mixed_script: 0,
+      lang_hindi: 0,
+      difficulty_entity_density: 0.2,
+      difficulty_math_marker_count: 0,
+      has_digits: 1,
+      has_math_symbols: 0,
+      has_code_markers: 0,
+      has_email_or_amount: 0,
+      language_group: 'english',
+      reference_token_count: 10,
+      tokenizer_backend: 'tiktoken_cl100k_base',
+      truncated: false,
+      token_count: 10,
+      char_count: 33,
+    };
+    const rows = featureRows(features);
+    expect(rows).toHaveLength(Object.keys(features).length);
+    expect(rows.find((row) => row.key === 'word_count')?.label).toBe('Whitespace words');
+    expect(rows.find((row) => row.key === 'reference_token_count')?.label).toContain(
+      'not provider billing',
+    );
+    expect(rows.find((row) => row.key === 'truncated')).toEqual({
+      key: 'truncated',
+      label: 'Truncated at 20,000 characters',
+      value: 'No',
+    });
+    expect(rows.every((row) => row.label.trim().length > 0)).toBe(true);
   });
 });
 
