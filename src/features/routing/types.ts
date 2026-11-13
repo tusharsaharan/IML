@@ -49,6 +49,69 @@ export interface RoutingArtifact {
   dataset_rows: number | null;
 }
 
+/** One feature's signed contribution to a logistic-regression logit. */
+export interface RoutingLogregFeature {
+  feature: string;
+  value: number;
+  contribution: number;
+  direction: 'toward_stronger' | 'toward_economy';
+}
+
+/**
+ * Per-request attribution for a logistic-regression decision. Only returned
+ * when logistic regression is the primary model and its coefficient artifact
+ * is available; never fabricated for another classifier.
+ */
+export interface RoutingLogregExplanation {
+  method: 'logistic_regression_contribution';
+  model: string;
+  is_request_specific: true;
+  bias: number;
+  features: RoutingLogregFeature[];
+  /** Sum of every contribution outside the returned top 5. */
+  other_contribution: number;
+  logit: number;
+  probability: number;
+  note: string;
+}
+
+/** One item in a per-request occlusion explanation. */
+export interface RoutingOcclusionItem {
+  feature: string;
+  /** Numeric feature value, or the language-group string for `language_group`. */
+  value: string | number;
+  contribution: number;
+  direction: 'toward_stronger' | 'toward_economy';
+}
+
+/**
+ * Per-request one-feature-at-a-time occlusion against the training mean, for
+ * whichever model is primary. `base_score` is the score with no occlusion.
+ */
+export interface RoutingOcclusionExplanation {
+  method: 'occlusion_vs_training_mean';
+  model: string;
+  is_request_specific: true;
+  base_score: number;
+  items: RoutingOcclusionItem[];
+  note: string;
+}
+
+/** Explicit "no attribution available" payload (fallback or missing means). */
+export interface RoutingUnavailableExplanation {
+  method: 'unavailable';
+  model: null;
+  is_request_specific: false;
+  features: [];
+  reason: string;
+  note: string;
+}
+
+export type RoutingExplanationDetail =
+  | RoutingLogregExplanation
+  | RoutingOcclusionExplanation
+  | RoutingUnavailableExplanation;
+
 export interface RoutingPrediction {
   selected_tier: RoutingTier;
   selected_model_label: string;
@@ -58,6 +121,7 @@ export interface RoutingPrediction {
   features: RoutingFeatures;
   model_scores: RoutingModelScores;
   explanation: string[];
+  explanation_detail: RoutingExplanationDetail;
   note: string;
   scorer: RoutingScorer;
   artifact: RoutingArtifact;

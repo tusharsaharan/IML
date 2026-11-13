@@ -6,9 +6,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { fetchRoutingModels, predictRouting } from './client';
 import {
   buildPolicyComparison,
+  explanationMethodLabel,
+  explanationRows,
+  explanationSummary,
   fallbackNotice,
   featureRows,
   formatScore,
+  formatSigned,
   modelAgreement,
   modelScoreRows,
   MODEL_LABELS,
@@ -295,6 +299,93 @@ export function RoutingPage() {
           )}
         </section>
       </div>
+
+      {result && (
+        <section aria-labelledby="routing-explanation-heading">
+          <h3 id="routing-explanation-heading" className="text-2xl font-semibold">
+            Explanation — why this route?
+          </h3>
+          <p className="mt-2 text-sm font-medium">
+            {explanationMethodLabel(result.explanation_detail)}
+          </p>
+          <p className="mono mt-1 text-xs text-muted">
+            method: {result.explanation_detail.method}
+          </p>
+          <p className="mt-2 max-w-[85ch] leading-relaxed">
+            {explanationSummary(result.explanation_detail)}
+          </p>
+
+          {result.explanation_detail.method === 'unavailable' && (
+            <p className="routing-fallback mt-3 text-sm" role="status">
+              {result.explanation_detail.reason}
+            </p>
+          )}
+
+          {result.explanation_detail.method !== 'unavailable' && (
+            <div
+              className="routing-table-wrap mt-4"
+              tabIndex={0}
+              role="region"
+              aria-label="Route explanation features, scroll horizontally on small screens"
+            >
+              <table className="routing-table">
+                <caption>
+                  {result.explanation_detail.method === 'logistic_regression_contribution'
+                    ? 'Top 5 features by absolute logistic-regression contribution. Direction is written in words, not shown by colour alone.'
+                    : 'Top 5 items by absolute occlusion contribution against the training average. Each item replaces one feature (or the four language flags together) with its training mean.'}
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Feature</th>
+                    <th scope="col">Feature value</th>
+                    <th scope="col">Direction</th>
+                    <th scope="col">
+                      {result.explanation_detail.method === 'logistic_regression_contribution'
+                        ? 'Contribution'
+                        : 'Occlusion contribution'}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {explanationRows(result.explanation_detail).map((row) => (
+                    <tr key={row.key}>
+                      <th scope="row">{row.label}</th>
+                      <td className="mono" dir="auto">
+                        {row.value}
+                      </td>
+                      <td>{row.directionLabel}</td>
+                      <td className="mono">{row.amount}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {result.explanation_detail.method === 'logistic_regression_contribution' && (
+            <p className="mt-3 text-sm leading-relaxed text-muted">
+              Intercept (bias) {formatSigned(result.explanation_detail.bias)}; features outside the
+              top 5 together {formatSigned(result.explanation_detail.other_contribution)}. Together
+              they sum to the logit {formatSigned(result.explanation_detail.logit)}, whose sigmoid
+              is {formatScore(result.explanation_detail.probability)} — the logistic-regression
+              stronger-tier score.
+            </p>
+          )}
+
+          {result.explanation_detail.method === 'occlusion_vs_training_mean' && (
+            <p className="mt-3 text-sm leading-relaxed text-muted">
+              Base score for an average request:{' '}
+              {formatScore(result.explanation_detail.base_score)}. Each contribution is this
+              prompt's score minus the score after setting that feature (or the four language
+              flags together) to its training mean.
+            </p>
+          )}
+
+          <p className="mt-3 text-sm leading-relaxed text-muted">
+            {result.explanation_detail.note}
+          </p>
+        </section>
+      )}
 
       <section aria-labelledby="routing-model-scores-heading">
         <h3 id="routing-model-scores-heading" className="text-2xl font-semibold">

@@ -1,16 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildPolicyComparison,
+  explanationMethodLabel,
+  explanationRows,
+  explanationSummary,
   fallbackNotice,
   featureRows,
   formatScore,
+  formatSigned,
   modelAgreement,
   modelScoreRows,
   primaryModelName,
   tierLabel,
 } from './helpers';
 import { ROUTING_PRESETS } from './presets';
-import type { RoutingFeatures, RoutingModelScores, RoutingScorer } from './types';
+import type {
+  RoutingFeatures,
+  RoutingLogregExplanation,
+  RoutingModelScores,
+  RoutingOcclusionExplanation,
+  RoutingScorer,
+  RoutingUnavailableExplanation,
+} from './types';
 
 function scorer(overrides: Partial<RoutingScorer> = {}): RoutingScorer {
   return {
@@ -184,6 +195,149 @@ describe('buildPolicyComparison', () => {
     expect(buildPolicyComparison({ balanced: result('strong', 0.91, 0.5296) }).map((row) => row.policy))
       .toEqual(['balanced']);
     expect(buildPolicyComparison({})).toEqual([]);
+  });
+});
+
+describe('explanation panel helpers', () => {
+  const logreg: RoutingLogregExplanation = {
+    method: 'logistic_regression_contribution',
+    model: 'logistic_regression',
+    is_request_specific: true,
+    bias: -0.292,
+    features: [
+      {
+        feature: 'has_digits',
+        value: 1,
+        contribution: 0.482,
+        direction: 'toward_stronger',
+      },
+      {
+        feature: 'roman_hindi_ratio',
+        value: 0.25,
+        contribution: -0.311,
+        direction: 'toward_economy',
+      },
+      {
+        feature: 'difficulty_math_marker_count',
+        value: 2,
+        contribution: 0.207,
+        direction: 'toward_stronger',
+      },
+    ],
+    other_contribution: -0.176,
+    logit: -0.09,
+    probability: 0.478,
+    note: 'Explains the logistic-regression score; labels are authored fixtures.',
+  };
+
+  const occlusion: RoutingOcclusionExplanation = {
+    method: 'occlusion_vs_training_mean',
+    model: 'random_forest',
+    is_request_specific: true,
+    base_score: 0.412,
+    items: [
+      {
+        feature: 'has_digits',
+        value: 1,
+        contribution: 0.182,
+        direction: 'toward_stronger',
+      },
+      {
+        feature: 'language_group',
+        value: 'hinglish',
+        contribution: -0.131,
+        direction: 'toward_economy',
+      },
+      {
+        feature: 'difficulty_math_marker_count',
+        value: 2,
+        contribution: 0.077,
+        direction: 'toward_stronger',
+      },
+    ],
+    note: 'Approximate: one-feature-at-a-time comparison against the training average. Labels are authored fixtures.',
+  };
+
+  const unavailable: RoutingUnavailableExplanation = {
+    method: 'unavailable',
+    model: null,
+    is_request_specific: false,
+    features: [],
+    reason: 'Trained routing artifacts are unavailable.',
+    note: 'No per-request feature attribution is available.',
+  };
+
+  it('labels the method without implying more than it does', () => {
+    expect(explanationMethodLabel(logreg)).toContain('Per-request');
+    expect(explanationMethodLabel(occlusion)).toContain('occlusion');
+    expect(explanationMethodLabel(unavailable)).toContain('No explanation');
+  });
+
+  it('signs contributions and states direction in text, not colour', () => {
+    expect(formatSigned(0.482)).toBe('+0.482');
+    expect(formatSigned(-0.311)).toBe('-0.311');
+    expect(formatSigned(0)).toBe('+0.000');
+
+    const rows = explanationRows(logreg);
+    expect(rows.map((row) => row.amount)).toEqual(['+0.482', '-0.311', '+0.207']);
+    expect(rows.map((row) => row.directionLabel)).toEqual([
+      'Pushes toward stronger model',
+      'Pushes toward economy',
+      'Pushes toward stronger model',
+    ]);
+    expect(rows[0].value).toBe('1');
+    expect(rows[0].label).toBe('Contains digits (1 = yes)');
+  });
+
+  it('builds one sentence naming the strongest push each way', () => {
+    const summary = explanationSummary(logreg);
+    expect(summary).toContain('0.478');
+    expect(summary).toContain('toward the stronger model from');
+    expect(summary).toContain('Contains digits (1 = yes) and Math markers');
+    expect(summary).toContain('toward economy from Roman-Hindi token share');
+    expect(summary.endsWith('.')).toBe(true);
+    expect(summary).not.toContain('. ');
+  });
+
+  it('omits the economy clause when nothing pushes that way', () => {
+    const summary = explanationSummary({
+      ...logreg,
+      features: logreg.features.filter((row) => row.direction === 'toward_stronger'),
+    });
+    expect(summary).not.toContain('toward economy');
+    expect(summary).toContain('Contains digits');
+  });
+
+  it('renders occlusion items with values, signed contributions and text direction', () => {
+    const rows = explanationRows(occlusion);
+    expect(rows.map((row) => row.key)).toEqual([
+      'has_digits',
+      'language_group',
+      'difficulty_math_marker_count',
+    ]);
+    expect(rows.map((row) => row.amount)).toEqual(['+0.182', '-0.131', '+0.077']);
+    expect(rows.map((row) => row.directionLabel)).toEqual([
+      'Pushes toward stronger model',
+      'Pushes toward economy',
+      'Pushes toward stronger model',
+    ]);
+    expect(rows[1].label).toBe('Language group');
+    expect(rows[1].value).toBe('hinglish');
+  });
+
+  it('describes occlusion against the training average, not global importance', () => {
+    const summary = explanationSummary(occlusion);
+    expect(summary).toContain('0.412');
+    expect(summary).toContain('training average');
+    expect(summary).toContain('toward the stronger model from');
+    expect(summary).toContain('toward economy from Language group');
+    expect(summary.endsWith('.')).toBe(true);
+    expect(summary).not.toContain('. ');
+  });
+
+  it('repeats the backend reason when no explanation is available', () => {
+    expect(explanationRows(unavailable)).toEqual([]);
+    expect(explanationSummary(unavailable)).toContain('Trained routing artifacts are unavailable.');
   });
 });
 

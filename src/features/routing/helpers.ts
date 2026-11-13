@@ -1,4 +1,5 @@
 import type {
+  RoutingExplanationDetail,
   RoutingFeatures,
   RoutingModelScores,
   RoutingPolicy,
@@ -122,6 +123,117 @@ export function featureRows(features: RoutingFeatures): FeatureRow[] {
     label: FEATURE_LABELS[key] ?? key.replaceAll('_', ' '),
     value: formatFeatureValue(value),
   }));
+}
+
+export const EXPLANATION_METHOD_LABELS = {
+  logistic_regression_contribution: 'Per-request logistic-regression contribution',
+  occlusion_vs_training_mean: 'Per-request occlusion against the training average',
+  unavailable: 'No explanation available',
+} as const;
+
+export function explanationMethodLabel(detail: RoutingExplanationDetail): string {
+  return EXPLANATION_METHOD_LABELS[detail.method];
+}
+
+export function featureLabel(key: string): string {
+  return FEATURE_LABELS[key] ?? key.replaceAll('_', ' ');
+}
+
+/** `+0.482`, `-0.111`; a signed number so "toward stronger" is visible as text. */
+export function formatSigned(value: number): string {
+  if (!Number.isFinite(value)) return '—';
+  return `${value >= 0 ? '+' : ''}${value.toFixed(3)}`;
+}
+
+export type ExplanationDirection = 'toward_stronger' | 'toward_economy';
+
+export interface ExplanationRow {
+  key: string;
+  label: string;
+  /** The request value for this row; `language_group` uses the group string. */
+  value: string;
+  direction: ExplanationDirection;
+  /** Plain-text direction, so colour is never the only signal. */
+  directionLabel: string;
+  /** Signed contribution, already formatted. */
+  amount: string;
+  /** 0..1 magnitude relative to the largest row, for a decorative bar. */
+  share: number;
+}
+
+function joinNames(names: string[]): string {
+  if (names.length <= 1) return names.join('');
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
+function pushLabels(
+  rows: Array<{ feature: string; direction: ExplanationDirection }>,
+  direction: ExplanationDirection,
+): string[] {
+  return rows
+    .filter((row) => row.direction === direction)
+    .slice(0, 2)
+    .map((row) => featureLabel(row.feature));
+}
+
+function pushesClause(stronger: string[], economy: string[]): string {
+  return [
+    stronger.length ? `toward the stronger model from ${joinNames(stronger)}` : '',
+    economy.length ? `toward economy from ${joinNames(economy)}` : '',
+  ].filter(Boolean).join(', and ');
+}
+
+export function explanationRows(detail: RoutingExplanationDetail): ExplanationRow[] {
+  if (detail.method === 'unavailable') return [];
+  const rows = detail.method === 'occlusion_vs_training_mean' ? detail.items : detail.features;
+  const max = rows.reduce(
+    (top, row) => Math.max(top, Math.abs(row.contribution)),
+    0,
+  );
+  return rows.map((row) => ({
+    key: row.feature,
+    label: featureLabel(row.feature),
+    value: formatFeatureValue(row.value),
+    direction: row.direction,
+    directionLabel:
+      row.direction === 'toward_stronger'
+        ? 'Pushes toward stronger model'
+        : 'Pushes toward economy',
+    amount: formatSigned(row.contribution),
+    share: max > 0 ? Math.abs(row.contribution) / max : 0,
+  }));
+}
+
+/**
+ * One data-driven sentence. Both per-request methods name the strongest push
+ * each way; occlusion also states its base score. Unavailable repeats the
+ * backend reason instead of inventing one.
+ */
+export function explanationSummary(detail: RoutingExplanationDetail): string {
+  if (detail.method === 'unavailable') {
+    return `No route explanation is available: ${detail.reason}`;
+  }
+  const stronger = pushLabels(
+    detail.method === 'occlusion_vs_training_mean' ? detail.items : detail.features,
+    'toward_stronger',
+  );
+  const economy = pushLabels(
+    detail.method === 'occlusion_vs_training_mean' ? detail.items : detail.features,
+    'toward_economy',
+  );
+  const clause = pushesClause(stronger, economy);
+  if (detail.method === 'occlusion_vs_training_mean') {
+    const base = detail.base_score.toFixed(3);
+    if (!clause) {
+      return `Compared with the training average (base stronger-tier score ${base}), no top item moved this route materially.`;
+    }
+    return `Compared with the training average (base stronger-tier score ${base}), the strongest pushes ${clause}.`;
+  }
+  const score = detail.probability.toFixed(3);
+  if (!clause) {
+    return `Logistic-regression stronger-tier score ${score}; no top feature moved it materially.`;
+  }
+  return `Logistic-regression stronger-tier score ${score}, with the strongest pushes ${clause}.`;
 }
 
 export interface PolicyResultLike {

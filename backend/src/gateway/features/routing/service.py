@@ -7,6 +7,7 @@ and no API key is required.
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -14,7 +15,12 @@ from pathlib import Path
 import joblib
 
 from gateway.core.config import ARTIFACTS, get_settings
-from gateway.features.routing.features import RoutingFeatures, extract_features
+from gateway.features.routing.explain import OCCLUSION_NOTE, occlusion_items
+from gateway.features.routing.features import (
+    MODEL_FEATURE_NAMES,
+    RoutingFeatures,
+    extract_features,
+)
 from gateway.features.routing.training import MODEL_NAMES
 from gateway.tokenizer import TokenCounter
 
@@ -22,6 +28,9 @@ POLICIES: tuple[str, ...] = ("economy", "balanced", "quality")
 # Stub thresholds, kept only for the clearly labelled starter-heuristic fallback.
 STUB_THRESHOLDS = {"economy": 0.7, "balanced": 0.5, "quality": 0.3}
 METRICS_FILE = "routing_metrics.json"
+COEFFICIENTS_FILE = "routing_logreg_coefficients.json"
+EXPLANATION_TOP_N = 5
+LOGREG_EXPLANATION_NOTE = "Explains the logistic-regression score; labels are authored fixtures."
 REPO_ROOT = Path(__file__).resolve().parents[5]
 TRAINED_NOTE = (
     "Trained routing classifiers scored this prompt locally on CPU. Scores are "
@@ -41,6 +50,8 @@ class Bundle:
     primary: str
     thresholds: dict[str, float]
     metrics_path: Path
+    coefficients: dict | None
+    coefficients_error: str | None
 
 
 def artifact_path(name: str, artifacts_dir: Path | None = None) -> Path:
@@ -92,6 +103,87 @@ def _explanation(features: RoutingFeatures, policy: str, score: float, threshold
     ]
 
 
+def _validate_coefficients(coefficients: dict) -> None:
+    """Reject a malformed coefficient artifact before it reaches the response."""
+    names = list(coefficients.get("feature_names") or [])
+    if names != list(MODEL_FEATURE_NAMES):
+        raise ValueError("Coefficient feature names do not match MODEL_FEATURE_NAMES.")
+    for key in ("coefficients", "scaler_mean", "scaler_scale"):
+        values = coefficients.get(key)
+        if not isinstance(values, list) or len(values) != len(MODEL_FEATURE_NAMES):
+            raise ValueError(f"Coefficient artifact has an invalid {key}.")
+    if not isinstance(coefficients.get("intercept"), (int, float)):
+        raise ValueError("Coefficient artifact has no numeric intercept.")
+    if any(float(value) == 0 for value in coefficients["scaler_scale"]):
+        raise ValueError("Coefficient artifact has a zero scaler scale.")
+
+
+def _unavailable_explanation(reason: str) -> dict:
+    """Explicit 'no attribution' payload; never invented for a model without one."""
+    return {
+        "method": "unavailable",
+        "model": None,
+        "is_request_specific": False,
+        "features": [],
+        "reason": reason,
+        "note": "No per-request feature attribution is available; labels are authored fixtures.",
+    }
+
+
+def _logreg_explanation(features: RoutingFeatures, coefficients: dict) -> dict:
+    """coef x standardised value per feature, plus intercept; top 5 by |contribution|."""
+    total = float(coefficients["intercept"])
+    rows = []
+    for name, value, coefficient, mean, scale in zip(
+        MODEL_FEATURE_NAMES,
+        features.vector(),
+        coefficients["coefficients"],
+        coefficients["scaler_mean"],
+        coefficients["scaler_scale"],
+    ):
+        contribution = float(coefficient) * ((float(value) - float(mean)) / float(scale))
+        total += contribution
+        if abs(contribution) > 1e-12:
+            rows.append({
+                "feature": name,
+                "value": float(value),
+                "contribution": contribution,
+                "direction": "toward_stronger" if contribution > 0 else "toward_economy",
+            })
+    ranked = sorted(rows, key=lambda row: abs(row["contribution"]), reverse=True)[:EXPLANATION_TOP_N]
+    top_sum = sum(row["contribution"] for row in ranked)
+    bias = float(coefficients["intercept"])
+    return {
+        "method": "logistic_regression_contribution",
+        "model": "logistic_regression",
+        "is_request_specific": True,
+        "bias": bias,
+        "features": ranked,
+        "other_contribution": total - bias - top_sum,
+        "logit": total,
+        "probability": 1.0 / (1.0 + math.exp(-total)),
+        "note": LOGREG_EXPLANATION_NOTE,
+    }
+
+
+def _occlusion_explanation(features: RoutingFeatures, model, coefficients: dict,
+                           primary: str) -> dict:
+    """Per-request occlusion for the primary model, using training means."""
+    means = dict(zip(MODEL_FEATURE_NAMES,
+                     (float(value) for value in coefficients["scaler_mean"])))
+    base_score, items = occlusion_items(
+        model, features.vector(), means, features.language_group
+    )
+    return {
+        "method": "occlusion_vs_training_mean",
+        "model": primary,
+        "is_request_specific": True,
+        "base_score": base_score,
+        "items": items,
+        "note": OCCLUSION_NOTE,
+    }
+
+
 class RoutingService:
     def __init__(self, artifacts_dir: Path | None = None) -> None:
         self.artifacts_dir = Path(artifacts_dir) if artifacts_dir is not None else ARTIFACTS
@@ -115,8 +207,21 @@ class RoutingService:
                           for policy in POLICIES}
             if not all(0.0 <= value <= 1.0 for value in thresholds.values()):
                 raise ValueError("Policy thresholds must lie in [0, 1].")
+            coefficients, coefficients_error = None, None
+            try:
+                coefficients = json.loads(
+                    artifact_path(COEFFICIENTS_FILE, self.artifacts_dir).read_text(encoding="utf-8")
+                )
+                _validate_coefficients(coefficients)
+            except Exception as exc:
+                coefficients_error = (
+                    "Logistic-regression coefficient artifact unavailable or invalid "
+                    f"({type(exc).__name__})."
+                )
             return Bundle(models=models, metrics=metrics, primary=primary,
-                          thresholds=thresholds, metrics_path=metrics_path), None
+                          thresholds=thresholds, metrics_path=metrics_path,
+                          coefficients=coefficients,
+                          coefficients_error=coefficients_error), None
         except Exception as exc:  # Any load failure degrades to the labelled fallback.
             return None, (
                 f"Trained routing artifact unavailable or invalid "
@@ -132,6 +237,35 @@ class RoutingService:
             name: float(model.predict_proba(row)[0][1])
             for name, model in self.bundle.models.items()
         }
+
+    def explanation_detail(self, features: RoutingFeatures) -> dict:
+        """Per-request top influences for the primary model, or an explicit unavailable object."""
+        if self.bundle is None:
+            return _unavailable_explanation(
+                "Trained routing artifacts are unavailable, so the starter heuristic has no "
+                "model attribution."
+            )
+        if self.bundle.primary == "logistic_regression":
+            if self.bundle.coefficients is None:
+                return _unavailable_explanation(
+                    self.bundle.coefficients_error
+                    or "Logistic-regression coefficients are unavailable."
+                )
+            return _logreg_explanation(features, self.bundle.coefficients)
+        if self.bundle.coefficients is None:
+            reason = (
+                "Training feature means are unavailable or invalid, so the primary model's "
+                "route has no per-request explanation."
+            )
+            if self.bundle.coefficients_error:
+                reason = f"{reason} {self.bundle.coefficients_error}"
+            return _unavailable_explanation(reason)
+        return _occlusion_explanation(
+            features,
+            self.bundle.models[self.bundle.primary],
+            self.bundle.coefficients,
+            self.bundle.primary,
+        )
 
     def predict(self, text: str, policy: str, compressed_text: str | None = None) -> dict:
         if policy not in POLICIES:
@@ -152,6 +286,7 @@ class RoutingService:
             "features": _features_payload(features),
             "model_scores": {name: round(value, 4) for name, value in scores.items()},
             "explanation": _explanation(features, policy, score, threshold, tier, proxy=False),
+            "explanation_detail": self.explanation_detail(features),
             "note": TRAINED_NOTE,
             "scorer": {
                 "requested": f"trained_{self.bundle.primary}",
@@ -200,6 +335,7 @@ class RoutingService:
             "features": _features_payload(features),
             "model_scores": {name: round(value, 4) for name, value in scores.items()},
             "explanation": _explanation(features, policy, score, threshold, tier, proxy=True),
+            "explanation_detail": self.explanation_detail(features),
             "note": f"{FALLBACK_NOTE} {self.fallback_reason}",
             "scorer": {
                 "requested": "trained_model",
