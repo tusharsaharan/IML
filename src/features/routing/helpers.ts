@@ -166,12 +166,24 @@ function joinNames(names: string[]): string {
   return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
 
-function pushLabels(
-  rows: Array<{ feature: string; direction: ExplanationDirection }>,
-  direction: ExplanationDirection,
-): string[] {
+/** Contributions below this size are noise and are not named in the summary. */
+export const MATERIAL_CONTRIBUTION = 0.02;
+
+export const NO_MATERIAL_SUMMARY =
+  'No single feature changes this score by more than 0.02; the score comes from combinations of features.';
+
+interface ContributionRow {
+  feature: string;
+  direction: ExplanationDirection;
+  contribution: number;
+}
+
+function pushLabels(rows: ContributionRow[], direction: ExplanationDirection): string[] {
   return rows
-    .filter((row) => row.direction === direction)
+    .filter(
+      (row) =>
+        row.direction === direction && Math.abs(row.contribution) >= MATERIAL_CONTRIBUTION,
+    )
     .slice(0, 2)
     .map((row) => featureLabel(row.feature));
 }
@@ -205,35 +217,24 @@ export function explanationRows(detail: RoutingExplanationDetail): ExplanationRo
 }
 
 /**
- * One data-driven sentence. Both per-request methods name the strongest push
- * each way; occlusion also states its base score. Unavailable repeats the
- * backend reason instead of inventing one.
+ * One data-driven sentence. Both per-request methods name only pushes of at
+ * least 0.02 each way; occlusion states this prompt's own score, not an
+ * average. Unavailable repeats the backend reason instead of inventing one.
  */
 export function explanationSummary(detail: RoutingExplanationDetail): string {
   if (detail.method === 'unavailable') {
     return `No route explanation is available: ${detail.reason}`;
   }
-  const stronger = pushLabels(
-    detail.method === 'occlusion_vs_training_mean' ? detail.items : detail.features,
-    'toward_stronger',
+  const rows = detail.method === 'occlusion_vs_training_mean' ? detail.items : detail.features;
+  const clause = pushesClause(
+    pushLabels(rows, 'toward_stronger'),
+    pushLabels(rows, 'toward_economy'),
   );
-  const economy = pushLabels(
-    detail.method === 'occlusion_vs_training_mean' ? detail.items : detail.features,
-    'toward_economy',
-  );
-  const clause = pushesClause(stronger, economy);
+  if (!clause) return NO_MATERIAL_SUMMARY;
   if (detail.method === 'occlusion_vs_training_mean') {
-    const base = detail.base_score.toFixed(3);
-    if (!clause) {
-      return `Compared with the training average (base stronger-tier score ${base}), no top item moved this route materially.`;
-    }
-    return `Compared with the training average (base stronger-tier score ${base}), the strongest pushes ${clause}.`;
+    return `This prompt's stronger-tier score is ${detail.base_score.toFixed(3)}, with the strongest pushes ${clause}.`;
   }
-  const score = detail.probability.toFixed(3);
-  if (!clause) {
-    return `Logistic-regression stronger-tier score ${score}; no top feature moved it materially.`;
-  }
-  return `Logistic-regression stronger-tier score ${score}, with the strongest pushes ${clause}.`;
+  return `Logistic-regression stronger-tier score ${detail.probability.toFixed(3)}, with the strongest pushes ${clause}.`;
 }
 
 export interface PolicyResultLike {

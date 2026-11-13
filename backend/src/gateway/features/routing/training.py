@@ -234,7 +234,7 @@ def train(rows: list[dict], artifact_dir: Path, *, dataset_path: Path | None = N
         "Primary model is logistic regression because it is interpretable and powers the explanation panel."
         if primary == PRIMARY_DEFAULT else
         f"Primary model is {primary} because its cross-validation F1 clearly beat logistic regression by at "
-        "least 0.02; logistic regression is still fitted and saved for the explanation panel.",
+        "least 0.02; logistic regression is also saved as an interpretable baseline.",
         f"Balanced threshold {policies['balanced']['threshold']} maximises out-of-fold F1 "
         f"({round(threshold_f1, METRIC_DIGITS)}) on the train split; ties go to the value closest to 0.5.",
         "Policy thresholds are authored offsets, not learned or certified values. "

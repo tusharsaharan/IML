@@ -374,10 +374,16 @@ export function RoutingPage() {
 
           {result.explanation_detail.method === 'occlusion_vs_training_mean' && (
             <p className="mt-3 text-sm leading-relaxed text-muted">
-              Base score for an average request:{' '}
-              {formatScore(result.explanation_detail.base_score)}. Each contribution is this
-              prompt's score minus the score after setting that feature (or the four language
-              flags together) to its training mean.
+              This prompt's score: {formatScore(result.explanation_detail.base_score)}. Each
+              contribution is this score minus the score after setting that feature (or the four
+              language flags together) to its training average.
+            </p>
+          )}
+
+          {result.explanation_detail.method === 'occlusion_vs_training_mean' && (
+            <p className="mt-3 text-sm leading-relaxed">
+              Contributions are one-at-a-time changes and do not add up to the score; much of the
+              score can come from feature combinations.
             </p>
           )}
 
@@ -469,7 +475,9 @@ export function RoutingPage() {
             ? 'Scoring the same prompt under economy, balanced and quality.'
             : policyRows.length
               ? 'Same prompt, three policy thresholds. Only the primary model decides each route.'
-              : 'Enter a prompt to compare the three policies.'}
+              : text.trim()
+                ? 'Press the button to compare the three policies for the prompt above.'
+                : 'Enter a prompt to compare the three policies.'}
         </div>
         {policyRows.length > 0 && (
           <ul className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -609,7 +617,7 @@ export function RoutingPage() {
                           ? `Did not converge (n_iter=${entry.n_iter ?? 'unknown'})`
                           : entry.converged === true
                             ? 'Converged'
-                            : 'Not reported'}
+                            : 'n/a'}
                       </td>
                     </tr>
                   ))}

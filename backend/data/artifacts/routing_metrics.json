@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-12T13:27:02+00:00",
+  "generated_at": "2026-11-13T07:56:01+00:00",
   "random_seed": 42,
   "library_versions": {
     "python": "3.11.9",
@@ -185,7 +185,7 @@
   "notes": [
     "Routing labels are authored fixtures. Metrics show how well the classifiers reproduce those labels, not real model answer quality, routing savings or provider behaviour.",
     "Dataset: 300 authored prompts; the held-out test set has 60 rows, so metric uncertainty is high.",
-    "Primary model is random_forest because its cross-validation F1 clearly beat logistic regression by at least 0.02; logistic regression is still fitted and saved for the explanation panel.",
+    "Primary model is random_forest because its cross-validation F1 clearly beat logistic regression by at least 0.02; logistic regression is also saved as an interpretable baseline.",
     "Balanced threshold 0.5296 maximises out-of-fold F1 (0.9048) on the train split; ties go to the value closest to 0.5.",
     "Policy thresholds are authored offsets, not learned or certified values. score >= threshold routes to the stronger tier; score < threshold routes to economy.",
     "Per-group accuracy uses only the held-out test rows; several groups have very few rows (see per_group_accuracy support), so these values are indicative, not guarantees.",

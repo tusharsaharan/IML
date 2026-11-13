@@ -10,6 +10,7 @@ import {
   formatSigned,
   modelAgreement,
   modelScoreRows,
+  NO_MATERIAL_SUMMARY,
   primaryModelName,
   tierLabel,
 } from './helpers';
@@ -325,14 +326,52 @@ describe('explanation panel helpers', () => {
     expect(rows[1].value).toBe('hinglish');
   });
 
-  it('describes occlusion against the training average, not global importance', () => {
+  it('describes this prompt\'s own score, not an average request', () => {
     const summary = explanationSummary(occlusion);
-    expect(summary).toContain('0.412');
-    expect(summary).toContain('training average');
+    expect(summary).toContain("This prompt's stronger-tier score is 0.412");
+    expect(summary).not.toContain('training average');
+    expect(summary).not.toContain('average request');
     expect(summary).toContain('toward the stronger model from');
     expect(summary).toContain('toward economy from Language group');
     expect(summary.endsWith('.')).toBe(true);
     expect(summary).not.toContain('. ');
+  });
+
+  it('does not name effects smaller than 0.02', () => {
+    const negligible: RoutingOcclusionExplanation = {
+      ...occlusion,
+      base_score: 0.91,
+      items: [
+        { feature: 'has_digits', value: 1, contribution: 0.005, direction: 'toward_stronger' },
+        { feature: 'language_group', value: 'english', contribution: 0.004, direction: 'toward_stronger' },
+      ],
+    };
+    expect(explanationSummary(negligible)).toBe(NO_MATERIAL_SUMMARY);
+    expect(NO_MATERIAL_SUMMARY).toBe(
+      'No single feature changes this score by more than 0.02; the score comes from combinations of features.',
+    );
+
+    const mixed: RoutingOcclusionExplanation = {
+      ...negligible,
+      items: [
+        ...negligible.items,
+        { feature: 'code_mix_ratio', value: 0.2, contribution: -0.15, direction: 'toward_economy' },
+      ],
+    };
+    const summary = explanationSummary(mixed);
+    expect(summary).not.toContain('Contains digits');
+    expect(summary).toContain('toward economy from Code-mixed token share');
+    expect(summary).not.toContain('toward the stronger model');
+  });
+
+  it('uses the same threshold for logistic-regression summaries', () => {
+    expect(
+      explanationSummary({
+        ...logreg,
+        features: logreg.features.map((row) => ({ ...row, contribution: row.contribution * 0.01 })),
+        probability: 0.91,
+      }),
+    ).toBe(NO_MATERIAL_SUMMARY);
   });
 
   it('repeats the backend reason when no explanation is available', () => {
