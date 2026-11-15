@@ -65,11 +65,13 @@ export interface HistoryItem {
   cache_hit?: boolean;
   compressed?: boolean;
   input_tokens: number;
-  output_tokens: number;
+  output_tokens: number | null;
   max_tokens_set?: number | null;
   format_constraint?: string | null;
-  cost_usd?: number;
+  cost_usd?: number | null;
   source?: string;
+  answer_source?: string;
+  token_basis?: string;
   notes?: string;
 }
 

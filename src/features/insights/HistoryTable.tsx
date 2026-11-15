@@ -137,7 +137,7 @@ export function HistoryTable() {
                     )}
                   </td>
                   <td className="p-3 text-right font-semibold text-ink">{item.input_tokens}</td>
-                  <td className="p-3 text-right font-semibold text-ink">{item.output_tokens}</td>
+                  <td className="p-3 text-right font-semibold text-ink">{item.output_tokens ?? 'unknown'}</td>
                   <td className="p-3 font-sans">
                     {item.format_constraint ? (
                       <span className="rounded bg-amber-50 px-1.5 py-0.5 text-amber-800 border border-amber-200 text-[10px]">
@@ -153,7 +153,7 @@ export function HistoryTable() {
                   </td>
                   <td className="p-3 font-sans">
                     <Badge variant="secondary" className="text-[10px]">
-                      {item.source || 'fixture'}
+                    {item.source === 'store' ? item.answer_source || 'recorded' : 'authored fixture'}
                     </Badge>
                   </td>
                 </tr>

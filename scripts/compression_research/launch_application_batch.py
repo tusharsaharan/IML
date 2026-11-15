@@ -14,6 +14,7 @@ import zipfile
 from pathlib import Path
 
 from kaggle_api import call
+from kaggle_pilot import verified_source_data
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -36,8 +37,8 @@ def snapshot() -> tuple[str, dict]:
         if item["destination"] == "backend/src/gateway/__init__.py":
             continue
         path = ROOT / item["destination"]
-        if path in paths and hashlib.sha256(path.read_bytes()).hexdigest() != item["sha256"]:
-            raise RuntimeError(f"Pinned Research fingerprint mismatch: {item['destination']}")
+        if path in paths:
+            verified_source_data(path.read_bytes(), item["sha256"], path.suffix in {".py", ".json", ".jsonl", ".md"})
     buffer = io.BytesIO()
     hashes = {}
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:

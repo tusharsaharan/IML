@@ -1,434 +1,120 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { ArrowRight, CheckCircle2, Play, RotateCcw } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { runPipeline, type ChatRequest, type ChatResult } from '@/lib/pipeline';
+import { browserScope } from '@/lib/session';
 
 const PRESETS = [
-  {
-    name: 'Hinglish Support',
-    text: 'Yaar, can you please tell me ki library book renew karne ka last date kya hai? I am travelling this week.',
-    lang: 'hinglish',
-  },
-  {
-    name: 'English Wi-Fi',
-    text: 'Hello sir, my campus Wi-Fi login portal is not opening on my phone. Please help me connect.',
-    lang: 'en',
-  },
-  {
-    name: 'Hindi Deadline',
-    text: 'असाइनमेंट २ सबमिट करने की अंतिम तिथि क्या है और लेट सबमिशन पर कितना दंड लगेगा?',
-    lang: 'hi',
-  },
-];
-
-interface PipelineStageResult {
-  cache?: { match_type: string; similarity?: number; answer?: string; is_hit: boolean };
-  compression?: { original: string; compressed: string; original_tokens: number; compressed_tokens: number; ratio: number; method: string };
-  routing?: { selected_tier: string; selected_model_label: string; score: number; policy: string };
-  insights?: { predicted_output_tokens: number; cost_usd: number; tokens_saved: number; cost_saved_usd: number };
-}
+  ['Hinglish support', 'Yaar basically mera hostel ka wifi bahut slow chal raha hai, please help me connect.'],
+  ['English library', 'Hello sir, can you please explain how to renew my library book before the due date?'],
+  ['Hindi assignment', 'असाइनमेंट जमा करने की अंतिम तिथि कहाँ देख सकते हैं?'],
+] as const;
+const INITIAL: ChatRequest = {
+  text: PRESETS[0][1], language: 'auto', mode: 'demo',
+  compression: { enabled: true, method: 'crf', budget: 0.6 },
+  routing: { enabled: true, policy: 'balanced' }, cache: { enabled: true },
+  output: { max_tokens: 120, format_constraint: null }, compare: false,
+};
+const selectClass = 'mt-1 w-full rounded-xl border border-line bg-white p-2 text-sm';
 
 export function StudioPage() {
-  const [text, setText] = useState(PRESETS[0].text);
-  const [policy, setPolicy] = useState<'economy' | 'balanced' | 'quality'>('balanced');
-  const [formatConstraint, setFormatConstraint] = useState<string>('3 bullets');
-  const [maxTokens, setMaxTokens] = useState<number>(40);
+  const location = useLocation();
+  const handoff = location.state?.studioRequest as ChatRequest | undefined;
+  const [request, setRequest] = useState<ChatRequest>(() => handoff ? { ...INITIAL, ...handoff, output: INITIAL.output } : INITIAL);
+  const [result, setResult] = useState<ChatResult | null>(null);
   const [busy, setBusy] = useState(false);
-  const [viewMode, setViewMode] = useState<'visual' | 'json'>('visual');
-  const [pipelineData, setPipelineData] = useState<PipelineStageResult | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const [json, setJson] = useState(false);
+  const [liveReady, setLiveReady] = useState(false);
+  const [health, setHealth] = useState('Checking backend…');
+  const [lastRequest, setLastRequest] = useState('');
+  const stale = result !== null && lastRequest !== JSON.stringify(request);
 
-  async function runUnifiedPipeline() {
-    if (!text.trim()) return;
+  useEffect(() => {
+    fetch('/api/v1/health').then(async response => {
+      if (!response.ok) throw new Error('Backend unavailable');
+      const data = await response.json();
+      setLiveReady(data.live_ready === true);
+      setHealth(data.live_ready ? 'Demo / configured live provider' : 'Local CPU demo · authored answers');
+    }).catch(() => setHealth('Backend unavailable · start npm run dev'));
+  }, []);
+
+  async function run() {
     setBusy(true);
-    setErrorMsg(null);
-
-    const resultAccumulator: PipelineStageResult = {};
-
+    setError('');
+    setResult(null);
+    const snapshot = JSON.stringify(request);
     try {
-      // Stage 1: Cache Lookup (Shivam)
-      try {
-        const cacheRes = await fetch('/api/v1/cache/lookup', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ text, language: 'auto' }),
-        });
-        if (cacheRes.ok) {
-          const cData = await cacheRes.json();
-          resultAccumulator.cache = {
-            match_type: cData.match_type || 'miss',
-            similarity: cData.similarity,
-            answer: cData.answer,
-            is_hit: cData.match_type === 'exact' || cData.match_type === 'semantic',
-          };
-        }
-      } catch {
-        resultAccumulator.cache = { match_type: 'offline', is_hit: false };
-      }
-
-      // Stage 2: Prompt Compression (Tushar)
-      let compressedText = text;
-      try {
-        const compRes = await fetch('/api/v1/compression/analyze', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ text, method: 'heuristic', budget: 0.6 }),
-        });
-        if (compRes.ok) {
-          const compData = await compRes.json();
-          compressedText = compData.compressed || text;
-          resultAccumulator.compression = {
-            original: compData.original,
-            compressed: compData.compressed,
-            original_tokens: compData.original_tokens,
-            compressed_tokens: compData.compressed_tokens,
-            ratio: compData.compression_ratio,
-            method: compData.method,
-          };
-        }
-      } catch {
-        // Fallback if compression unavailable
-      }
-
-      // Stage 3: Smart Routing (Rakesh)
-      let selectedTier = 'cheap';
-      try {
-        const routRes = await fetch('/api/v1/routing/predict', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ text, compressed_text: compressedText, policy }),
-        });
-        if (routRes.ok) {
-          const rData = await routRes.json();
-          selectedTier = rData.selected_tier || 'cheap';
-          resultAccumulator.routing = {
-            selected_tier: rData.selected_tier,
-            selected_model_label: rData.selected_model_label || rData.selected_tier,
-            score: rData.score,
-            policy: rData.policy || policy,
-          };
-        }
-      } catch {
-        // Fallback
-      }
-
-      // Stage 4: Output Capping & Cost Analytics (Aman)
-      try {
-        const predRes = await fetch('/api/v1/insights/predict-length', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            input_tokens: resultAccumulator.compression?.compressed_tokens || 15,
-            language: 'en',
-            format_constraint: formatConstraint !== 'none' ? formatConstraint : undefined,
-            max_tokens: maxTokens,
-          }),
-        });
-        const predData = predRes.ok ? await predRes.json() : { predicted_output_tokens: 35 };
-
-        const tierForCost = selectedTier === 'strong' || selectedTier === 'quality' ? 'premium' : 'cheap';
-        const costRes = await fetch('/api/v1/insights/cost-estimate', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            text: compressedText,
-            estimated_output_tokens: 100,
-            tier: tierForCost,
-            format_constraint: formatConstraint !== 'none' ? formatConstraint : undefined,
-            max_tokens_cap: maxTokens,
-          }),
-        });
-        const costData = costRes.ok ? await costRes.json() : { cost_usd: 0.000015, cost_saved_usd: 0.00002 };
-
-        resultAccumulator.insights = {
-          predicted_output_tokens: predData.predicted_output_tokens,
-          cost_usd: costData.cost_usd,
-          tokens_saved: costData.output_tokens_saved,
-          cost_saved_usd: costData.cost_saved_usd,
-        };
-
-        // Record request into shared store
-        await fetch('/api/v1/insights/record', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            text,
-            language: 'auto',
-            result: {
-              compressed_text: compressedText,
-              route: selectedTier,
-              cache_hit: resultAccumulator.cache?.is_hit || false,
-              input_tokens: resultAccumulator.compression?.compressed_tokens || 15,
-              output_tokens: predData.predicted_output_tokens,
-              cost_usd: costData.cost_usd,
-              format_constraint: formatConstraint,
-              max_tokens: maxTokens,
-            },
-          }),
-        });
-      } catch {
-        // Fallback
-      }
-
-      setPipelineData(resultAccumulator);
-    } catch (err) {
-      setErrorMsg(String(err));
-    } finally {
-      setBusy(false);
-    }
+      setResult(await runPipeline(request, browserScope()));
+      setLastRequest(snapshot);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Pipeline request failed.');
+    } finally { setBusy(false); }
   }
 
-  return (
-    <div className="grid gap-6 lg:grid-cols-[1.05fr_1.15fr]">
-      {/* Input Workbench Panel */}
-      <Card className="panel p-6 space-y-4">
-        <div>
-          <span className="eyebrow">Unified Gateway Workbench</span>
-          <h2 className="mt-1 text-2xl font-bold tracking-tight text-ink">
-            See How A Request Is Optimised End-To-End
-          </h2>
-          <p className="mt-1 text-sm text-muted">
-            Send a query through all 4 layers: <strong>Cache</strong> (Shivam) &rarr; <strong>Compression</strong> (Tushar) &rarr; <strong>Smart Routing</strong> (Rakesh) &rarr; <strong>Output Capping & Cost</strong> (Aman).
-          </p>
-        </div>
-
-        {/* Preset quick-select buttons */}
-        <div>
-          <label className="text-xs font-semibold text-ink">Demo Example Queries (Click to load):</label>
-          <div className="mt-1.5 flex flex-wrap gap-2">
-            {PRESETS.map((p) => (
-              <Button
-                key={p.name}
-                size="sm"
-                variant={text === p.text ? 'default' : 'outline'}
-                onClick={() => setText(p.text)}
-                className="text-xs"
-              >
-                {p.name}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold text-ink">User Prompt Text:</label>
-          <Textarea
-            className="mt-1.5 min-h-28 bg-white text-xs leading-relaxed"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Type any English, Hinglish, or Hindi prompt..."
-          />
-        </div>
-
-        {/* Gateway Pipeline Controls */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-line">
-          <div>
-            <label className="text-[11px] font-semibold text-muted uppercase">Routing Policy</label>
-            <select
-              value={policy}
-              onChange={(e) => setPolicy(e.target.value as 'economy' | 'balanced' | 'quality')}
-              aria-label="Routing Policy"
-              className="mt-1 flex h-8 w-full rounded-md border border-input bg-transparent px-2 text-xs shadow-sm"
-            >
-              <option value="economy">Economy (Prefer 20B)</option>
-              <option value="balanced">Balanced</option>
-              <option value="quality">Quality (Prefer 120B)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="text-[11px] font-semibold text-muted uppercase">Output Format</label>
-            <select
-              value={formatConstraint}
-              onChange={(e) => setFormatConstraint(e.target.value)}
-              aria-label="Output Format"
-              className="mt-1 flex h-8 w-full rounded-md border border-input bg-transparent px-2 text-xs shadow-sm"
-            >
-              <option value="3 bullets">3 bullets (~60% cut)</option>
-              <option value="JSON only">JSON only (~68% cut)</option>
-              <option value="no preamble">No preamble (~80% cut)</option>
-              <option value="none">No constraint</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="text-[11px] font-semibold text-muted uppercase">max_tokens Cap</label>
-            <input
-              type="number"
-              min={10}
-              max={500}
-              value={maxTokens}
-              onChange={(e) => setMaxTokens(Number(e.target.value))}
-              aria-label="max_tokens Cap"
-              className="mt-1 flex h-8 w-full rounded-md border border-input bg-transparent px-2 text-xs shadow-sm"
-            />
-          </div>
-        </div>
-
-        <div className="pt-2 flex items-center justify-between">
-          <Button onClick={runUnifiedPipeline} disabled={busy} className="bg-accent hover:bg-accent-strong text-white font-medium">
-            {busy ? 'Running Pipeline...' : 'Run Unified Pipeline'}
-          </Button>
-          <span className="text-xs text-muted">Runs Cache &rarr; Compress &rarr; Route &rarr; Cap</span>
-        </div>
-
-        {errorMsg && <p className="text-xs text-red-600">{errorMsg}</p>}
-      </Card>
-
-      {/* Right Side: Visual Pipeline Execution Card */}
-      <Card className="panel p-6 space-y-4">
-        <div className="flex items-center justify-between border-b border-line pb-3">
-          <div>
-            <span className="eyebrow">Execution Trace</span>
-            <h3 className="text-lg font-bold text-ink">Pipeline Optimization Result</h3>
-          </div>
-          <div className="flex gap-1.5">
-            <Button
-              size="sm"
-              variant={viewMode === 'visual' ? 'default' : 'outline'}
-              onClick={() => setViewMode('visual')}
-              className="h-7 text-xs px-2.5"
-            >
-              Visual Stages
-            </Button>
-            <Button
-              size="sm"
-              variant={viewMode === 'json' ? 'default' : 'outline'}
-              onClick={() => setViewMode('json')}
-              className="h-7 text-xs px-2.5"
-            >
-              Raw JSON
-            </Button>
-          </div>
-        </div>
-
-        {!pipelineData ? (
-          <div className="flex flex-col items-center justify-center min-h-[340px] text-center p-6 border-2 border-dashed border-line rounded-2xl bg-canvas">
-            <p className="text-sm font-semibold text-ink">Ready to run the unified pipeline</p>
-            <p className="text-xs text-muted max-w-sm mt-1">
-              Select one of the demo prompts on the left and click <strong>&quot;Run Unified Pipeline&quot;</strong> to watch all 4 optimization layers execute in real time.
-            </p>
-          </div>
-        ) : viewMode === 'json' ? (
-          <pre className="mono max-h-[460px] overflow-auto rounded-2xl bg-[#162824] p-4 text-xs text-[#edf4f1]">
-            {JSON.stringify(pipelineData, null, 2)}
-          </pre>
-        ) : (
-          <div className="space-y-3.5 max-h-[500px] overflow-y-auto pr-1">
-            {/* Stage 1: Memory & Cache */}
-            <div className="rounded-xl border border-line bg-white/70 p-3.5 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-800">
-                    1
-                  </span>
-                  <span className="text-xs font-bold text-ink">Semantic Cache (Shivam)</span>
-                </div>
-                {pipelineData.cache?.is_hit ? (
-                  <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-[10px]">
-                    Hit ({pipelineData.cache.match_type}) &bull; $0 Cost
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-[10px] text-muted">
-                    Miss &bull; Sent to LLM Gateway
-                  </Badge>
-                )}
-              </div>
-              <p className="text-[11px] text-muted">
-                {pipelineData.cache?.is_hit
-                  ? `Answer found in memory. Returning stored response with 0 new provider tokens.`
-                  : `No exact or high-confidence semantic match. Proceeding to prompt optimization.`}
-              </p>
-            </div>
-
-            {/* Stage 2: Prompt Compression */}
-            <div className="rounded-xl border border-line bg-white/70 p-3.5 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-bold text-indigo-800">
-                    2
-                  </span>
-                  <span className="text-xs font-bold text-ink">Prompt Compression (Tushar)</span>
-                </div>
-                {pipelineData.compression && (
-                  <Badge className="bg-indigo-50 text-indigo-800 border-indigo-200 text-[10px]">
-                    {pipelineData.compression.original_tokens} &rarr; {pipelineData.compression.compressed_tokens} tokens
-                  </Badge>
-                )}
-              </div>
-              {pipelineData.compression && (
-                <div className="rounded bg-canvas p-2 font-mono text-[11px] text-ink border border-line">
-                  &ldquo;{pipelineData.compression.compressed}&rdquo;
-                </div>
-              )}
-            </div>
-
-            {/* Stage 3: Smart Routing */}
-            <div className="rounded-xl border border-line bg-white/70 p-3.5 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-[10px] font-bold text-purple-800">
-                    3
-                  </span>
-                  <span className="text-xs font-bold text-ink">Smart Model Router (Rakesh)</span>
-                </div>
-                {pipelineData.routing && (
-                  <Badge className={pipelineData.routing.selected_tier === 'strong' ? 'bg-purple-100 text-purple-800 border-purple-300 text-[10px]' : 'bg-emerald-100 text-emerald-800 border-emerald-300 text-[10px]'}>
-                    Tier: {pipelineData.routing.selected_tier.toUpperCase()} ({pipelineData.routing.selected_model_label})
-                  </Badge>
-                )}
-              </div>
-              <p className="text-[11px] text-muted">
-                Classified under <strong className="text-ink">{policy}</strong> policy based on code-mixing ratio and difficulty score ({pipelineData.routing?.score?.toFixed(3)}).
-              </p>
-            </div>
-
-            {/* Stage 4: Output Capping & Cost Analytics */}
-            <div className="rounded-xl border-2 border-emerald-300 bg-emerald-50/60 p-3.5 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">
-                    4
-                  </span>
-                  <span className="text-xs font-bold text-emerald-950">
-                    Output Capping & Cost (Aman &bull; Point 2)
-                  </span>
-                </div>
-                <Badge className="bg-emerald-600 text-white text-[10px]">
-                  Capped: {formatConstraint} (max {maxTokens})
-                </Badge>
-              </div>
-
-              {pipelineData.insights && (
-                <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="rounded-lg bg-white p-2 border border-emerald-200">
-                    <span className="block text-[10px] text-muted">Est. Output Tokens</span>
-                    <span className="font-bold text-ink text-sm">
-                      {pipelineData.insights.predicted_output_tokens} tok
-                    </span>
-                  </div>
-                  <div className="rounded-lg bg-white p-2 border border-emerald-200">
-                    <span className="block text-[10px] text-muted">Tokens Saved</span>
-                    <span className="font-bold text-emerald-700 text-sm">
-                      ↓ {pipelineData.insights.tokens_saved} tok
-                    </span>
-                  </div>
-                  <div className="rounded-lg bg-white p-2 border border-emerald-200">
-                    <span className="block text-[10px] text-muted">Cost / Request</span>
-                    <span className="font-bold text-ink text-sm">
-                      ${pipelineData.insights.cost_usd.toFixed(6)}
-                    </span>
-                  </div>
-                </div>
-              )}
-              <p className="text-[10px] text-emerald-800 italic">
-                ✓ Enforced output bounds prevented runaway generation. Saved ~60% completion tokens and recorded to SQLite store for live audit.
-              </p>
-            </div>
-          </div>
-        )}
-      </Card>
+  return <div className="space-y-6">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div><p className="eyebrow">One request. One pipeline.</p><h2 className="mt-2 text-3xl font-semibold tracking-tight">Request Studio</h2><p className="mt-2 max-w-2xl text-sm text-muted">Inspect answer reuse, prompt compression, model selection and usage in one server execution.</p></div>
+      <Badge variant="outline">{health}</Badge>
     </div>
-  );
+    <div className="grid items-start gap-6 lg:grid-cols-[0.95fr_1.15fr]">
+      <Card className="panel space-y-5 p-5 sm:p-6">
+        <div className="flex flex-wrap gap-2">{PRESETS.map(([label, text]) => <Button key={label} size="sm" variant="outline" disabled={busy} onClick={() => setRequest({ ...request, text, compression: { ...request.compression, protected_phrases: [] } })}>{label}</Button>)}</div>
+        {handoff && <p className="rounded-xl border border-line bg-canvas p-3 text-sm">Loaded from Compression Studio. Compression is disabled to preserve the checked output.</p>}
+        <fieldset disabled={busy} className="space-y-4 disabled:opacity-70">
+          <div><label htmlFor="studio-prompt" className="text-sm font-medium">Your question</label><Textarea id="studio-prompt" value={request.text} maxLength={4000} rows={5} dir="auto" className="mt-2 bg-white" onChange={e => setRequest({ ...request, text: e.target.value })} /><p className="mt-1 text-xs text-muted">English, Hinglish or Hindi · {request.text.length}/4,000 characters</p></div>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="text-xs font-medium">Answer source<select aria-label="Answer source" className={selectClass} value={request.mode} onChange={e => setRequest({ ...request, mode: e.target.value as ChatRequest['mode'] })}><option value="demo">Authored demo</option><option value="live" disabled={!liveReady}>Live provider{!liveReady ? ' (configure server)' : ''}</option></select></label>
+            <label className="text-xs font-medium">Language<select aria-label="Language" className={selectClass} value={request.language} onChange={e => setRequest({ ...request, language: e.target.value as ChatRequest['language'] })}>{['auto', 'en', 'hinglish', 'hi'].map(value => <option key={value}>{value}</option>)}</select></label>
+            <label className="text-xs font-medium">Compression method<select aria-label="Compression method" className={selectClass} value={request.compression.method} onChange={e => setRequest({ ...request, compression: { ...request.compression, method: e.target.value as 'heuristic' | 'crf' } })}><option value="heuristic">Heuristic</option><option value="crf">CRF</option></select></label>
+            <label className="text-xs font-medium">Routing policy<select aria-label="Routing policy" className={selectClass} value={request.routing.policy} onChange={e => setRequest({ ...request, routing: { ...request.routing, policy: e.target.value as ChatRequest['routing']['policy'] } })}>{['economy', 'balanced', 'quality'].map(value => <option key={value}>{value}</option>)}</select></label>
+            <label className="text-xs font-medium">Output format<select aria-label="Output format" className={selectClass} value={request.output?.format_constraint ?? ''} onChange={e => setRequest({ ...request, output: { max_tokens: request.output!.max_tokens, format_constraint: (e.target.value || null) as NonNullable<ChatRequest['output']>['format_constraint'] } })}><option value="">No format instruction</option><option>3 bullets</option><option>JSON only</option><option>no preamble</option></select></label>
+            <label className="text-xs font-medium">Maximum output tokens<input aria-label="Maximum output tokens" className={selectClass} type="number" min={1} max={4096} value={request.output?.max_tokens} onChange={e => setRequest({ ...request, output: { ...request.output!, max_tokens: Number(e.target.value) } })} /></label>
+          </div>
+          <div className="flex flex-wrap gap-4 border-t border-line pt-4 text-sm">
+            <label className="flex items-center gap-2"><input type="checkbox" checked={request.cache.enabled} onChange={e => setRequest({ ...request, cache: { ...request.cache, enabled: e.target.checked } })} />Reuse cache</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={request.compression.enabled} onChange={e => setRequest({ ...request, compression: { ...request.compression, enabled: e.target.checked } })} />Compress prompt</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={request.routing.enabled} onChange={e => setRequest({ ...request, routing: { ...request.routing, enabled: e.target.checked } })} />Smart routing</label>
+          </div>
+          <label className="flex items-start gap-2 text-xs text-muted"><input className="mt-0.5" type="checkbox" checked={request.cache.accept_semantic ?? false} onChange={e => setRequest({ ...request, cache: { ...request.cache, accept_semantic: e.target.checked } })} />Allow approximate answer reuse for this demo. Similarity can miss changed conditions; inspect the matched question.</label>
+        </fieldset>
+        <p className="text-xs leading-relaxed text-muted">Demo answers are authored support fixtures, with local formatting and reference-token caps. Live mode sends the compressed prompt, format instruction and output limit to the selected model. Compression targets do not guarantee a reduction.</p>
+        <Button className="w-full" disabled={busy || !request.text.trim() || !Number.isInteger(request.output?.max_tokens) || request.output!.max_tokens < 1 || request.output!.max_tokens > 4096} onClick={run}><Play className="mr-2 h-4 w-4" />{busy ? 'Running pipeline…' : 'Run pipeline'}</Button>
+        {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
+      </Card>
+      <div className="min-w-0 space-y-4" aria-live="polite">
+        {!result ? <Card className="panel flex min-h-96 flex-col items-center justify-center gap-4 p-8 text-center"><div className="rounded-full bg-accent/10 p-4"><ArrowRight className="h-7 w-7 text-accent" /></div><h3 className="text-xl font-semibold">{busy ? 'Executing your request' : 'From question to answer'}</h3><p className="max-w-sm text-sm text-muted">Cache → compression → routing → answer → insights. Repeat an eligible question to see the cache skip generation.</p></Card> : <>
+          {stale && <p role="status" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Inputs changed. The result below belongs to the previous run.</p>}
+          <Card className="panel space-y-4 p-5 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-2"><span className="eyebrow">Answer · request #{result.request_id}</span><Badge>{result.answer_source}</Badge></div>
+            <p className="whitespace-pre-wrap break-words text-base leading-relaxed" dir="auto">{result.answer}</p>
+            <p className="text-xs text-muted">{result.mode} · {result.language} · {result.model ?? 'cached answer; no model call'} · {result.elapsed_ms.toFixed(0)} ms</p>
+            {result.output.demo_truncated && <p className="text-xs text-amber-800">Authored answer shortened locally to the reference-token cap; it may be incomplete.</p>}
+            <div className="grid grid-cols-3 gap-2 border-t border-line pt-4 text-center">
+              <Metric label="Reference input" value={result.cache.hit ? 'skipped' : `${result.usage.reference_original_tokens} → ${result.usage.reference_prompt_tokens}`} />
+              <Metric label="Reference answer" value={`${result.usage.reference_output_tokens} tokens`} />
+              <Metric label="Provider calls" value={result.provider_called ? '1' : '0'} />
+            </div>
+            <p className="text-xs text-muted">Tokenizer: {result.usage.tokenizer_backend}. Provider usage: {result.usage.provider.total_tokens ?? 'not reported'}. Cost: {result.cost.usd === null ? 'unknown; prices not configured' : `$${result.cost.usd.toFixed(6)}`} ({result.cost.basis.replaceAll('_', ' ')}).</p>
+          </Card>
+          <Card className="panel space-y-4 p-5 sm:p-6">
+            <div className="flex items-center justify-between"><h3 className="font-semibold">Execution trace</h3><Button size="sm" variant="outline" onClick={() => setJson(!json)}>{json ? 'Show stages' : 'Inspect JSON'}</Button></div>
+            {json ? <pre className="max-h-[560px] overflow-auto rounded-xl bg-ink p-4 text-xs text-white">{JSON.stringify(result, null, 2)}</pre> : <ol className="space-y-4">{result.trace.map((stage, index) => <li key={stage.stage} className="flex gap-3"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-semibold text-accent">{index + 1}</span><div className="min-w-0"><div className="flex items-center gap-2"><h4 className="text-sm font-semibold capitalize">{stage.stage}</h4><Badge variant="outline">{stage.status}</Badge></div><p className="mt-1 text-xs leading-relaxed text-muted">{stage.note}</p>{stage.stage === 'compression' && result.compression && <p className="mt-2 whitespace-pre-wrap break-words rounded-xl bg-canvas p-3 text-xs" dir="auto">{result.compression.compressed}</p>}{stage.stage === 'routing' && result.routing && <p className="mt-1 text-xs">{result.routing.selected_tier} · score {result.routing.score.toFixed(3)} / threshold {result.routing.threshold.toFixed(3)} · {result.routing.policy}</p>}</div></li>)}</ol>}
+            {result.cache.matched_question && <p className="rounded-xl border border-line p-3 text-xs">{result.cache.hit ? 'Reused question' : 'Nearest candidate'}: {result.cache.matched_question} · similarity {result.cache.similarity}. Similarity does not establish answer validity.</p>}
+            <div className="flex flex-wrap gap-4 border-t border-line pt-3 text-xs"><Link className="text-accent underline" to={`/cache?scope=${encodeURIComponent(result.cache.scope)}`}>Manage this pipeline cache</Link><Link className="text-accent underline" to="/insights">View request history</Link></div>
+            <p className="flex items-center gap-2 text-xs text-muted"><CheckCircle2 className="h-4 w-4 shrink-0" />Recorded in SQLite with answer provenance. {result.cache.stored ? 'Answer saved for eligible repeats.' : ''}</p>
+          </Card>
+          <Button variant="outline" disabled={busy || stale} onClick={run}><RotateCcw className="mr-2 h-4 w-4" />Repeat this request</Button>
+        </>}
+      </div>
+    </div>
+  </div>;
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return <div className="rounded-xl bg-canvas p-2"><span className="block text-[10px] text-muted">{label}</span><span className="mt-1 block text-sm font-semibold">{value}</span></div>;
 }

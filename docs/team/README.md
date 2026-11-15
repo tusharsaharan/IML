@@ -11,4 +11,14 @@ All four workstreams are independent. Use the contracts in `contracts/api.md` an
 
 Shared changes (`src/components`, `src/lib`, `backend/src/gateway/core`, contracts) require coordination.
 
+## Merged application integration — 2026-11-15
+
+The user requested a coordinated audit/integration of all merged workstreams.
+Core owns the shared `/api/v1/chat` lifecycle, and `src/lib/pipeline.ts` owns its
+browser contract. The Studio consumes one core response; feature adapters retain
+their own implementations and do not import another feature. Compression hands
+checked output to Studio with compression disabled. Cache management accepts the
+pipeline's returned scope. Insights reads server-recorded provenance and usage.
+See `docs/integration-audit.md` and `contracts/api.md` for the reconciled contract.
+
 Each person should finish with: a working page, working API, visible ML or algorithmic logic, three demo cases, targeted tests, and their report/poster section.

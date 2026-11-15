@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { AlertCircle, Database, LoaderCircle, RefreshCw, Search, Sparkles, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { browserScope } from '@/lib/session';
 
 type CacheEntry = {
   id: number;
@@ -50,16 +52,8 @@ const demoQuestions = [
 ];
 
 function cacheScope() {
-  const key = 'iml.cache.scope.v1';
-  try {
-    const existing = localStorage.getItem(key);
-    if (existing && /^[A-Za-z0-9:_-]{1,128}$/.test(existing)) return existing;
-    const generated = `browser-${crypto.randomUUID()}`;
-    localStorage.setItem(key, generated);
-    return generated;
-  } catch {
-    return 'browser-local';
-  }
+  const pipelineScope = new URLSearchParams(window.location.search).get('scope');
+  return pipelineScope && /^pipeline:[a-f0-9]{32}$/.test(pipelineScope) ? pipelineScope : browserScope();
 }
 
 async function cacheApi<T>(path: string, init?: RequestInit): Promise<T> {
@@ -80,6 +74,8 @@ async function cacheApi<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export function CachePage() {
+  const location = useLocation();
+  const pipelineScope = new URLSearchParams(location.search).get('scope')?.startsWith('pipeline:');
   const [question, setQuestion] = useState('How do I renew my library book?');
   const [result, setResult] = useState<LookupResult | null>(null);
   const [entries, setEntries] = useState<CacheEntry[]>([]);
@@ -95,7 +91,7 @@ export function CachePage() {
     ]);
     setEntries(entryData.items);
     setStats(statsData);
-  }, []);
+  }, [location.search]);
 
   useEffect(() => {
     void refresh().catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Could not load cache data.'));
@@ -206,10 +202,11 @@ export function CachePage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => void run('refresh', refresh)} disabled={Boolean(busy)}><RefreshCw /> Refresh</Button>
-          <Button onClick={() => void seed()} disabled={Boolean(busy)}><Database /> Seed demo FAQs</Button>
+          <Button onClick={() => void seed()} disabled={Boolean(busy) || pipelineScope}><Database /> Seed demo FAQs</Button>
         </div>
       </div>
 
+      {pipelineScope && <p className="rounded-xl border border-line bg-white/70 p-3 text-sm">Viewing the cache for a specific Studio configuration. Lookup and deletion apply to these entries. <Link className="text-accent underline" to="/">Return to Studio to generate answers.</Link></p>}
       {error && <div role="alert" className="flex items-center gap-2 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-800"><AlertCircle className="size-4 shrink-0" />{error}</div>}
       {notice && <div role="status" className="rounded-xl border border-line bg-white/70 p-3 text-sm text-accent-strong">{notice}</div>}
 
@@ -233,7 +230,7 @@ export function CachePage() {
             {demoQuestions.map((demo) => <Button key={demo.label} size="sm" variant="ghost" className="h-7 px-2" onClick={() => setQuestion(demo.text)}>{demo.label}</Button>)}
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button onClick={() => void askPlatform()} disabled={!question.trim() || Boolean(busy)}>
+            <Button onClick={() => void askPlatform()} disabled={!question.trim() || Boolean(busy) || pipelineScope}>
               {busy === 'answer' ? <LoaderCircle className="animate-spin" /> : <Sparkles />} Ask platform &amp; cache
             </Button>
             <Button variant="outline" onClick={() => void lookup()} disabled={!question.trim() || Boolean(busy)}>

@@ -1,5 +1,5 @@
 """Studio post-run literal checks, not Kaggle/model research validation."""
-import hashlib
+from gateway.core.provenance import verified_source_bytes
 import json
 from pathlib import Path
 from unittest.mock import Mock
@@ -235,4 +235,4 @@ def test_research_dependencies_still_match_pinned_manifest():
     )) or row["destination"] in {"backend/src/gateway/schemas.py", "backend/src/gateway/tokenizer.py"}]
     assert rows
     for row in rows:
-        assert hashlib.sha256((root / row["destination"]).read_bytes()).hexdigest() == row["sha256"], row["destination"]
+        verified_source_bytes(root / row["destination"], row["sha256"])

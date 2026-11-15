@@ -128,7 +128,7 @@ def predict_output_length(
 
     # If max_tokens is set, model output cannot exceed max_tokens
     if max_tokens is not None:
-        capped_val = min(pred_val, float(max_tokens))
+        capped_val = max(1.0, min(pred_val, float(max_tokens)))
     else:
         capped_val = max(10.0, pred_val)
 
@@ -170,7 +170,7 @@ def analyze_clusters(extra_items: list[dict[str, Any]] | None = None) -> dict[st
         return {"points": [], "clusters": [], "explained_variance": [0.0, 0.0]}
 
     # Features: [input_tokens, output_tokens, code_mix_ratio, is_cached, is_compressed, route_tier]
-    route_map = {"economy": 0.0, "balanced": 1.0, "quality": 2.0}
+    route_map = {"economy": 0.0, "balanced": 1.0, "quality": 2.0, "cheap": 0.0, "strong": 2.0, "cache": 0.0}
     matrix = []
     for item in items:
         text = item.get("text", "")
@@ -195,11 +195,7 @@ def analyze_clusters(extra_items: list[dict[str, Any]] | None = None) -> dict[st
     labels = kmeans.fit_predict(coords)
 
     # Cluster profiles
-    cluster_names = {
-        0: "Compact & Capped Requests",
-        1: "Standard Multilingual Requests",
-        2: "High-Detail Quality Queries",
-    }
+    cluster_names = {c: f"Cluster {c + 1}" for c in range(k)}
 
     points = []
     for i, item in enumerate(items):
@@ -244,5 +240,5 @@ def analyze_clusters(extra_items: list[dict[str, Any]] | None = None) -> dict[st
         "clusters": summaries,
         "explained_variance_ratio": var_ratio,
         "total_explained_variance": round(sum(var_ratio), 4),
-        "note": "PCA 2D projection and K-Means (k=3) over input/output tokens, code-mixing, cache hits, compression and routing tier.",
+        "note": "Exploratory PCA/K-Means over authored fixtures and recorded history. Numeric cluster IDs do not establish semantic categories.",
     }

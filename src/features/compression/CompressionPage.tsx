@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { acceptPhraseResult, compressionRequest, chatRequest, downloadJson, highlightParts, phraseSelection, resultIsStale } from './client';
@@ -12,6 +13,7 @@ const percent = (value: number) => `${(value * 100).toFixed(1)}%`;
 const message = (error: unknown) => error instanceof Error ? error.message : 'The request could not finish.';
 
 export function CompressionPage() {
+  const navigate = useNavigate();
   const [samples, setSamples] = useState<Sample[]>([]);
   const [text, setText] = useState('');
   const [method, setMethod] = useState('heuristic');
@@ -122,7 +124,8 @@ export function CompressionPage() {
             <p className="compression-text mt-3 rounded-lg border border-line bg-canvas p-4" dir="auto">{result.compressed}</p>
             <p className="mt-3 text-sm text-muted">{result.note}</p>
             <div className="mt-4 flex flex-wrap gap-2"><Button className={secondaryClass} disabled={stale || busy} onClick={copy}>Copy text</Button><Button className={secondaryClass} disabled={stale || busy} onClick={() => downloadJson(result, 'compression-audit.json')}>Download audit</Button><Button className={secondaryClass} disabled={stale || busy} onClick={() => downloadJson(chatRequest(result), 'studio-chat-request.json')}>Export Studio request</Button></div>
-            <p className="mt-2 text-xs text-muted">Studio handoff is not wired yet. Export follows the shared chat contract with compression disabled to avoid compressing twice; no answer is generated.</p>
+            <Button className={`${secondaryClass} mt-3`} disabled={stale || busy || result.compressed.length > 4000} onClick={() => navigate('/', { state: { studioRequest: chatRequest(result) } })}>Send to Request Studio</Button>
+            <p className="mt-2 text-xs text-muted">Send the checked output to Request Studio with compression disabled. Run the pipeline there to obtain a labelled answer. Studio accepts up to 4,000 characters.</p>
             <p className="mt-2 text-sm" role="status">{copyMessage}</p>
             <details className="mt-4"><summary className="cursor-pointer font-medium">Protected content and algorithm drop records</summary>
               {result.protected_spans.length ? <ul className="mt-3 space-y-2 text-sm">{result.protected_spans.map((span, index) => <li key={`${span.start}-${span.end}-${index}`} className="break-words"><strong>{span.preserved ? 'Literal present' : 'Literal missing'}</strong>: <span dir="auto">{span.text}</span> ({span.kind}){span.candidate_preserved === false && <span>. Missing occurrences in compressor candidate; present status above describes the final output.</span>}</li>)}</ul> : <p className="mt-3 text-sm">No spans detected by the imported protection rules.</p>}

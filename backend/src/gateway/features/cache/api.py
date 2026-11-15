@@ -4,6 +4,7 @@ import json
 import re
 import sqlite3
 import unicodedata
+from contextlib import closing
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -207,7 +208,7 @@ def _maintain_cache(store: Store, cache_settings: CacheSettings) -> None:
 
 def _record_lookup(match_type: str, scope_id: str) -> None:
     settings = get_settings()
-    with sqlite3.connect(settings.database_path) as db:
+    with closing(sqlite3.connect(settings.database_path)) as db, db:
         db.execute(
             "insert into cache_lookup_events(created_at, match_type, scope_id) values (?, ?, ?)",
             (_now().isoformat(), match_type, scope_id),
@@ -216,7 +217,7 @@ def _record_lookup(match_type: str, scope_id: str) -> None:
 
 def _touch_entry(entry_id: int, scope_id: str) -> None:
     settings = get_settings()
-    with sqlite3.connect(settings.database_path) as db:
+    with closing(sqlite3.connect(settings.database_path)) as db, db:
         db.execute(
             """update cache_entry_runtime set last_accessed_at=?, hit_count=hit_count+1
                where entry_id=? and scope_id=?""",
@@ -258,7 +259,7 @@ def _nearest(text: str, entries: list[dict]) -> tuple[dict | None, float]:
 
     if missing:
         settings = get_settings()
-        with sqlite3.connect(settings.database_path) as db:
+        with closing(sqlite3.connect(settings.database_path)) as db, db:
             db.executemany(
                 "update cache_entries set embedding_json=? where id=?",
                 [(json.dumps(vector), entry_id) for entry_id, vector in missing],
@@ -518,7 +519,7 @@ def seed_demo_faqs(cache_scope: str = Header(default="public", alias="X-Cache-Sc
 def delete_entry(entry_id: int, cache_scope: str = Header(default="public", alias="X-Cache-Scope")):
     cache_scope = _validated_scope(cache_scope)
     settings = get_settings()
-    with sqlite3.connect(settings.database_path) as db:
+    with closing(sqlite3.connect(settings.database_path)) as db, db:
         row = db.execute(
             "select e.normalized from cache_entries e join cache_entry_runtime r on r.entry_id=e.id where e.id = ? and r.scope_id = ?",
             (entry_id, cache_scope),
@@ -535,7 +536,7 @@ def delete_entry(entry_id: int, cache_scope: str = Header(default="public", alia
 def clear_entries(cache_scope: str = Header(default="public", alias="X-Cache-Scope")):
     cache_scope = _validated_scope(cache_scope)
     settings = get_settings()
-    with sqlite3.connect(settings.database_path) as db:
+    with closing(sqlite3.connect(settings.database_path)) as db, db:
         rows = db.execute(
             "select e.id,e.normalized from cache_entries e join cache_entry_runtime r on r.entry_id=e.id where r.scope_id = ?",
             (cache_scope,),

@@ -159,11 +159,11 @@ def history(limit: int = 50):
 
     formatted: list[dict[str, Any]] = []
 
-    # Format live store requests
+    # Preserve observed zero and missing values; neither is an invented estimate.
     for item in store_items:
         res = item.get("result", {})
-        inp_tokens = res.get("input_tokens") or counter.count(item.get("text", ""))
-        out_tokens = res.get("output_tokens") or 50
+        inp_tokens = res.get("input_tokens", counter.count(item.get("text", "")))
+        out_tokens = res.get("output_tokens")
         formatted.append({
             "id": f"store-{item['id']}",
             "created_at": item.get("created_at", ""),
@@ -177,7 +177,10 @@ def history(limit: int = 50):
             "output_tokens": out_tokens,
             "max_tokens_set": res.get("max_tokens"),
             "format_constraint": res.get("format_constraint"),
-            "cost_usd": res.get("cost_usd", estimate_cost_usd(inp_tokens, out_tokens, CHEAP_PER_1K_USD, CHEAP_OUT_PER_1K_USD)),
+            "cost_usd": res.get("cost_usd"),
+            "answer_source": res.get("answer_source", "not recorded"),
+            "provider_usage": res.get("usage", {}).get("provider"),
+            "token_basis": "reference" if "usage" in res else "recorded by caller",
             "source": "store",
         })
 
@@ -218,7 +221,9 @@ def cost_estimate(request: CostEstimateRequest):
             format_discount = 0.45
         elif "preamble" in fmt or "1 line" in fmt:
             format_discount = 0.35
-    effective_output_tokens = max(10, int(effective_output_tokens * format_discount))
+    effective_output_tokens = max(1, int(effective_output_tokens * format_discount))
+    if request.max_tokens_cap is not None:
+        effective_output_tokens = min(effective_output_tokens, request.max_tokens_cap)
 
     # Rates
     if request.user_input_price_per_1k is not None and request.user_output_price_per_1k is not None:
@@ -250,7 +255,7 @@ def cost_estimate(request: CostEstimateRequest):
         "in_rate_per_1k_usd": in_rate,
         "out_rate_per_1k_usd": out_rate,
         "tokenizer_backend": counter.backend,
-        "note": "Reference token counts and estimated rates. Not an invoice or provider guarantee.",
+        "note": "Reference counts and scenario rates. Format discounts are authored heuristics, not measured savings or a provider guarantee.",
     }
 
 

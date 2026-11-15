@@ -12,6 +12,25 @@ Record any substantial modification to imported files here:
 |---|---|---|---|
 | _pending_ |  |  |  |
 
+## Shared application integration (2026-11-15)
+
+- Core now composes the four existing feature adapters through `/api/v1/chat`.
+  This is application orchestration; imported algorithms, checkpoints, reference
+  trees, manifests and saved routing artifacts were not modified.
+- The compression dependency check and private snapshot verifier now accept an
+  LF/CRLF transport conversion only when the resulting bytes match the existing
+  manifest SHA-256. This follows the already implemented verified-transfer rule
+  in `kaggle_pilot.py`; binary weights remain exact and content changes still fail.
+  `gateway/core/provenance.py` contains the corresponding local verifier. No
+  manifest hashes or imported source files were rewritten to make tests pass.
+- Authored demo-answer matching adds explicit Hindi topic keywords and the
+  hyphenated Wi-Fi spelling. Answers remain labelled fixtures, not measured
+  multilingual generation. Local output formatting/capping is separate from
+  research prompt compression.
+- Pipeline and provider checks use local execution and mock HTTP transports.
+  No new Kaggle evaluation, provider answer-quality experiment or GPU work was
+  performed, and no research compressor was changed.
+
 ## Compression application adapter (2026-11-09)
 
 - `backend/src/gateway/features/compression/` delegates to the imported `Compressor`,

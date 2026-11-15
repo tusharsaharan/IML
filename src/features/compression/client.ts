@@ -62,7 +62,7 @@ export function highlightParts(text: string, removed: TextSpan[], protectedSpans
 }
 
 export function chatRequest(result: CompressionResult) {
-  // Export the documented request only. No shared chat endpoint is available yet.
+  // Preserve the checked final output and prevent double compression in Studio.
   return {
     text: result.compressed, language: 'auto', mode: 'demo',
     compression: { enabled: false, method: result.requested_method, budget: result.budget },
