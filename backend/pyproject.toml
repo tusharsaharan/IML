@@ -14,6 +14,7 @@ dependencies = [
 dev = ["pytest>=8,<10", "pytest-asyncio>=0.24,<2", "ruff>=0.11,<1"]
 semantic = ["sentence-transformers>=3,<6"]
 compression = ["llmlingua>=0.2,<1", "transformers>=4.40,<5"]
+cache-redis = ["redis>=5,<7"]
 
 [build-system]
 requires = ["hatchling"]
