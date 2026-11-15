@@ -1,0 +1,20 @@
+.routing-studio { min-width: 0; }
+.routing-workspace { background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 1rem; }
+.routing-select { min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--color-line-strong); border-radius: .5rem; background: var(--color-panel); color: var(--color-ink); font: inherit; }
+.routing-studio .routing-preset { height: auto; white-space: normal; text-align: left; }
+.routing-tier { display: inline-flex; align-items: center; border: 1px solid; border-radius: .5rem; padding: .2rem .6rem; font-size: .8rem; font-weight: 600; }
+.routing-tier-strong { border-color: var(--color-warm); background: color-mix(in oklch, var(--color-warm) 16%, var(--color-panel)); color: var(--color-ink); }
+.routing-tier-cheap { border-color: var(--color-accent); background: color-mix(in oklch, var(--color-accent) 12%, var(--color-panel)); color: var(--color-ink); }
+.routing-primary { border: 1px solid var(--color-line-strong); background: var(--color-canvas); color: var(--color-ink); }
+.routing-bar { position: relative; height: .6rem; overflow: hidden; border-radius: 999px; background: color-mix(in oklch, var(--color-line) 55%, var(--color-panel)); }
+.routing-bar-fill { height: 100%; border-radius: 999px; background: var(--color-accent); }
+.routing-bar-threshold { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--color-warm); }
+.routing-fallback { border: 1px solid var(--color-warm); border-radius: .75rem; background: color-mix(in oklch, var(--color-warm) 12%, var(--color-panel)); padding: .9rem 1rem; }
+.routing-table-wrap { overflow-x: auto; max-width: 100%; }
+.routing-table { width: 100%; border-collapse: collapse; font-size: .875rem; text-align: left; font-variant-numeric: tabular-nums; }
+.routing-table caption { text-align: left; padding: .5rem 0 1rem; color: var(--color-muted); }
+.routing-table th, .routing-table td { padding: .65rem .7rem; border-bottom: 1px solid var(--color-line); vertical-align: top; }
+.routing-table thead { background: color-mix(in oklch, var(--color-line) 22%, var(--color-panel)); }
+.routing-studio :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+/* The project asks for no automatic animation; keep skeletons static. */
+.routing-studio .animate-pulse { animation: none; }
